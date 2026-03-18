@@ -31,7 +31,7 @@ body.portrait .mode-badge{font-size:clamp(5px,1.2vw,7px);display:none;}
 
 /* LANDSCAPE: side by side */
 body.landscape{flex-direction:row;gap:1px;padding:2px 2px;align-items:flex-start;}
-body.landscape .left-panel{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:88px;min-width:88px;max-width:88px;align-self:flex-start;padding-top:0;}
+body.landscape .left-panel{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:88px;min-width:88px;max-width:88px;align-self:flex-start;overflow-y:auto;max-height:100vh;}
 body.landscape #menu-panel .coin-display{margin-top:clamp(18px,3.5vh,28px);}
 body.landscape .menu-nav-grid{grid-template-columns:1fr;}
 body.landscape .nav-btn-big{flex-direction:row;gap:3px;padding:3px 4px;font-size:10px;justify-content:flex-start;width:100%;}
@@ -2489,8 +2489,8 @@ function stopMusic(){
 function showLoginPopup(){
   if(load('snakeLastLogin','')===todayKey()) return;
   const streak=load('snakeStreak',0);
-  const reward=Math.max(10,streak*10);
-  const nextReward=Math.max(10,(streak+1)*10);
+  const reward=Math.max(100,streak*100);
+  const nextReward=Math.max(100,(streak+1)*100);
   document.getElementById('login-streak-txt').textContent='TAG '+(streak||1)+' — STREAK: '+(streak||1)+'🔥';
   document.getElementById('login-coins-txt').textContent='+'+reward+'🪙';
   const fireTxt=document.getElementById('login-fire-txt');
@@ -2505,7 +2505,7 @@ function claimLoginReward(){
   if(load('snakeLastLogin','')===todayKey()) return;
   save('snakeLastLogin',todayKey());
   const streak=load('snakeStreak',0);
-  const reward=Math.max(10,streak*10);
+  const reward=Math.max(100,streak*100);
   coins+=reward; updateCoinDisplay(); saveAll();
 }
 document.getElementById('login-claim-btn').addEventListener('click',()=>{
@@ -2665,7 +2665,7 @@ const POWERUPS=[
   {id:'dscore',  name:'DOPPEL SCORE',icon:'🔥', desc:'2x Score für 15 Sek',price:800,  uses:3, color:'#ff4400'},
 ];
 let puOwned=load('snakePuOwned',{slow:0,shield:0,coin:0});
-let puActive={slow:false,coin:false,fruit:false,shrink:false};
+let puActive={slow:false,coin:false,fruit:false,shrink:false,dscore:false};
 let puTimers={};
 function savePu(){save('snakePuOwned',puOwned);}
 
