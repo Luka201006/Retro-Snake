@@ -1,0 +1,2777 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="RETRO-SNAKE">
+<meta name="theme-color" content="#00ff41">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>RETRO-SNAKE</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0a0f; --c:#00ff41;
+  --classic:#00ff41; --ghost:#cc44ff; --tunnel:#00d4ff; --hardcore:#ff3333; --maze:#ffee00;
+  --rare:#4488ff; --epic:#cc44ff; --legendary:#ffaa00;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);display:flex;align-items:center;justify-content:center;
+  width:100vw;height:100vh;height:100dvh;font-family:'Press Start 2P',monospace;overflow:hidden;touch-action:none;}
+
+/* PORTRAIT: stacked */
+body.portrait{flex-direction:column;}
+body.portrait .left-panel{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;width:100%;padding:4px 8px;}
+body.portrait .right-panel{display:flex;flex-direction:column;align-items:center;gap:4px;}
+body.portrait .hud{flex-direction:row;gap:clamp(6px,2vw,14px);margin-bottom:4px;}
+body.portrait .title{font-size:clamp(12px,3vw,22px);margin-bottom:2px;}
+body.portrait .mode-badge{font-size:clamp(5px,1.2vw,7px);display:none;}
+
+/* LANDSCAPE: side by side */
+body.landscape{flex-direction:row;gap:1px;padding:2px 2px;align-items:flex-start;}
+body.landscape .left-panel{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:88px;min-width:88px;max-width:88px;align-self:flex-start;padding-top:0;}
+body.landscape #menu-panel .coin-display{margin-top:clamp(18px,3.5vh,28px);}
+body.landscape .menu-nav-grid{grid-template-columns:1fr;}
+body.landscape .nav-btn-big{flex-direction:row;gap:3px;padding:3px 4px;font-size:10px;justify-content:flex-start;width:100%;}
+body.landscape .nav-btn-big span{font-size:clamp(3px,.6vw,4px);}
+body.landscape .coin-display{width:100%;justify-content:flex-start;padding:2px 4px;font-size:clamp(6px,1.2vw,7px);}
+body.landscape .title{font-size:clamp(7px,1.5vh,10px);}
+body.landscape .right-panel{display:flex;flex-direction:column;align-items:center;gap:4px;}
+body.landscape .hud{flex-direction:column;gap:4px;margin-bottom:4px;width:100%;}
+body.landscape .hud-item{flex-direction:row;justify-content:space-between;width:100%;}
+body.landscape .hud-label{font-size:clamp(4px,1vh,6px);}
+body.landscape .hud-value{font-size:clamp(6px,1.4vh,9px);}
+body.landscape .title{font-size:clamp(9px,2vh,14px);letter-spacing:.15em;margin-bottom:0;}
+body.landscape .mode-badge{font-size:clamp(4px,1vh,6px);margin-bottom:2px;}
+body.landscape .top-bar{margin-bottom:2px;flex-direction:column;gap:4px;width:100%;}
+body.landscape .coin-display{width:100%;justify-content:center;}
+body.landscape #locker-btn{width:100%;}
+body.landscape .controls{display:none;}
+body::before{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,.012) 2px,rgba(255,255,255,.012) 4px),
+  repeating-linear-gradient(90deg,transparent,transparent 2px,rgba(255,255,255,.012) 2px,rgba(255,255,255,.012) 4px);
+  pointer-events:none;z-index:10;}
+.scanlines{position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.13) 3px,rgba(0,0,0,.13) 4px);
+  pointer-events:none;z-index:11;animation:flicker 8s infinite;}
+@keyframes flicker{0%,100%{opacity:1}92%{opacity:1}93%{opacity:.8}94%{opacity:1}96%{opacity:.9}97%{opacity:1}}
+
+/* TITLE */
+.title{font-size:clamp(14px,3.5vw,30px);letter-spacing:.3em;margin-bottom:4px;color:var(--c);
+  text-shadow:0 0 10px var(--c),0 0 30px var(--c);animation:pulse 2s ease-in-out infinite;transition:color .4s,text-shadow .4s;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+.mode-badge{font-size:clamp(5px,1vw,7px);color:var(--c);letter-spacing:.15em;text-shadow:0 0 6px var(--c);
+  margin-bottom:4px;transition:color .4s,text-shadow .4s;}
+
+/* TOP BAR */
+.top-bar{display:flex;gap:8px;margin-bottom:5px;align-items:center;}
+.coin-display{display:flex;align-items:center;gap:5px;padding:4px 10px;
+  border:1px solid #ffaa00;box-shadow:0 0 12px #ffaa00,inset 0 0 8px rgba(255,170,0,.1);font-size:clamp(7px,1.4vw,9px);color:#ffdd00;background:rgba(255,170,0,.08);border-radius:4px;}
+.coin-display .coin-icon{font-size:13px;}
+
+/* HUD */
+.hud{display:flex;flex-direction:column;gap:5px;margin-bottom:6px;width:100%;}
+.hud-item{display:flex;flex-direction:row;justify-content:space-between;align-items:center;width:100%;padding:0 4px;}
+.hud-label{color:rgba(255,255,255,.4);font-size:clamp(6px,1.2vw,8px);letter-spacing:.15em;}
+.hud-value{color:var(--c);font-size:clamp(10px,2vw,14px);text-shadow:0 0 8px var(--c);transition:color .4s,text-shadow .4s;font-weight:bold;}
+.hud-value.bump{animation:bump .15s ease;}
+@keyframes bump{0%{transform:scale(1)}50%{transform:scale(1.5)}100%{transform:scale(1)}}
+.hud-stats{display:none;}
+.hud-stats.visible{display:contents;}
+
+/* CANVAS */
+.canvas-wrapper{position:relative;border:2px solid var(--c);
+  box-shadow:0 0 18px var(--c),0 0 45px color-mix(in srgb,var(--c) 25%,transparent);transition:border-color .4s,box-shadow .4s;}
+canvas{display:block;background:var(--bg);}
+
+/* OVERLAY base */
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(10,10,15,.93);gap:10px;overflow-y:auto;padding:10px;}
+.overlay.hidden{display:none;}
+.o-title{color:var(--c);font-size:clamp(12px,2.8vw,18px);letter-spacing:.2em;
+  text-shadow:0 0 10px var(--c),0 0 26px var(--c);transition:color .4s,text-shadow .4s;}
+.o-sub{color:rgba(255,255,255,.45);font-size:clamp(5px,1.1vw,7px);letter-spacing:.1em;}
+.o-hint{color:color-mix(in srgb,var(--c) 60%,transparent);font-size:clamp(5px,1.1vw,7px);animation:blink 1.2s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.o-score{font-size:clamp(7px,1.5vw,10px);}
+
+/* MODE GRID */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:92%;max-width:300px;}
+.mode-btn{padding:10px 5px;font-family:'Press Start 2P',monospace;font-size:clamp(5px,1.1vw,7px);
+  background:rgba(0,0,0,.3);border:2px solid;border-radius:6px;cursor:pointer;letter-spacing:.07em;
+  display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .2s;position:relative;overflow:hidden;}
+.mode-btn::before{content:'';position:absolute;inset:0;background:currentColor;opacity:0;transition:opacity .2s;}
+.mode-btn:hover::before{opacity:.08;}
+.mode-btn .mode-icon{font-size:20px;}
+.mode-btn .mode-desc{font-size:clamp(4px,.8vw,5px);opacity:.55;letter-spacing:.05em;}
+.mode-btn .mode-best{font-size:clamp(4px,.7vw,5px);opacity:.4;margin-top:1px;}
+.mode-btn.classic {color:var(--classic); border-color:var(--classic);}
+.mode-btn.ghost   {color:var(--ghost);   border-color:var(--ghost);}
+.mode-btn.tunnel  {color:var(--tunnel);  border-color:var(--tunnel);}
+.mode-btn.hardcore{color:var(--hardcore);border-color:var(--hardcore);}
+.mode-btn.maze    {color:var(--maze);    border-color:var(--maze);grid-column:1/-1;}
+.mode-btn.selected{filter:brightness(1.3);box-shadow:0 0 14px currentColor,inset 0 0 10px color-mix(in srgb,currentColor 20%,transparent);background:color-mix(in srgb,currentColor 8%,transparent);}
+.mode-btn:active{opacity:.7;transform:scale(.97);}
+
+/* SCOREBOARD */
+.scoreboard{width:88%;max-width:240px;border:1px solid color-mix(in srgb,var(--c) 30%,transparent);
+  padding:7px;background:color-mix(in srgb,var(--c) 4%,transparent);transition:border-color .4s;}
+.sb-title{color:var(--c);font-size:5px;letter-spacing:.2em;text-align:center;margin-bottom:6px;}
+.sb-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;
+  border-bottom:1px solid rgba(255,255,255,.07);font-size:clamp(5px,1vw,6px);}
+.sb-row:last-child{border-bottom:none;}
+.sb-rank{color:rgba(255,255,255,.3);width:14px;}
+.sb-name{flex:1;padding:0 4px;color:rgba(255,255,255,.9);}
+.sb-mode-dot{width:6px;height:6px;border-radius:50%;margin-right:3px;display:inline-block;}
+.sb-row.hi .sb-name,.sb-row.hi .sb-score{color:#fff;text-shadow:0 0 5px #fff;}
+
+/* ACTION BUTTONS */
+.action-btn{padding:clamp(8px,1.8vw,11px) clamp(14px,3vw,26px);font-family:'Press Start 2P',monospace;
+  font-size:clamp(8px,1.8vw,11px);background:transparent;border:2px solid;cursor:pointer;
+  letter-spacing:.1em;transition:all .2s;}
+.action-btn:active{opacity:.7;transform:scale(.97);}
+.action-btn.green{color:var(--c);border-color:var(--c);box-shadow:0 0 10px var(--c);}
+.action-btn.gold {color:#ffaa00;border-color:#ffaa00;box-shadow:0 0 10px #ffaa00;}
+.action-btn.gray {color:rgba(255,255,255,.4);border-color:rgba(255,255,255,.2);}
+
+.btn-row{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;justify-content:center;}
+#pause-btn{padding:6px 14px;font-family:'Press Start 2P',monospace;font-size:clamp(7px,1.5vw,9px);
+  background:transparent;color:var(--c);border:2px solid var(--c);box-shadow:0 0 7px var(--c);
+  cursor:pointer;opacity:.3;pointer-events:none;transition:all .3s;}
+#pause-btn.active{opacity:1;pointer-events:auto;}
+#pause-btn:active{opacity:.7;}
+
+
+
+/* NAME SCREEN */
+#name-screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;background:rgba(10,10,15,.97);gap:12px;}
+#name-screen.hidden{display:none;}
+.name-title{color:var(--classic);font-size:clamp(9px,2vw,12px);letter-spacing:.2em;text-shadow:0 0 10px var(--classic);}
+.name-sub{color:rgba(255,255,255,.4);font-size:clamp(5px,1.1vw,7px);}
+#name-input{background:transparent;border:none;border-bottom:2px solid var(--classic);color:var(--classic);
+  font-family:'Press Start 2P',monospace;font-size:clamp(11px,2.2vw,15px);text-align:center;
+  outline:none;width:200px;padding:6px;letter-spacing:.05em;caret-color:var(--classic);}
+#name-ok{padding:8px 22px;font-family:'Press Start 2P',monospace;font-size:clamp(8px,1.6vw,10px);
+  background:transparent;color:var(--classic);border:2px solid var(--classic);
+  box-shadow:0 0 10px var(--classic);cursor:pointer;}
+
+/* ══ LOCKER ROOM / SHOP ══ */
+#locker-room{position:fixed;inset:0;background:rgba(10,10,15,.97);z-index:100;
+  display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:16px 12px 24px;}
+#locker-room.hidden{display:none;}
+#challenges-screen{position:fixed;inset:0;background:rgba(10,10,15,.97);z-index:100;
+  display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:16px 12px 24px;}
+#challenges-screen.hidden{display:none;}
+#achievements-screen{position:fixed;inset:0;background:rgba(10,10,15,.97);z-index:100;
+  display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:16px 12px 24px;}
+#achievements-screen.hidden{display:none;}
+.lr-header{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:400px;margin-bottom:12px;}
+.lr-title{color:var(--c);font-size:clamp(10px,2.2vw,14px);letter-spacing:.2em;text-shadow:0 0 10px var(--c);}
+.lr-coins{color:#ffaa00;font-size:clamp(7px,1.4vw,9px);text-shadow:0 0 6px #ffaa00;}
+.lr-close{background:transparent;border:2px solid rgba(255,255,255,.3);color:rgba(255,255,255,.6);
+  font-family:'Press Start 2P',monospace;font-size:9px;padding:6px 10px;cursor:pointer;}
+.lr-close:active{opacity:.7;}
+
+/* Tabs */
+.lr-tabs{display:flex;gap:6px;margin-bottom:12px;width:100%;max-width:400px;}
+.lr-tab{flex:1;padding:7px 4px;font-family:'Press Start 2P',monospace;font-size:clamp(5px,1.1vw,7px);
+  background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.4);cursor:pointer;transition:all .2s;}
+.lr-tab.active{color:var(--c);border-color:var(--c);box-shadow:0 0 8px var(--c);}
+.lr-tab:active{opacity:.7;}
+
+.lr-section{display:none;width:100%;max-width:400px;}
+.lr-section.active{display:block;}
+
+/* Skin grid */
+.skin-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.skin-card{border:2px solid;padding:10px 8px;display:flex;flex-direction:column;align-items:center;
+  gap:6px;cursor:pointer;transition:all .2s;position:relative;}
+.skin-card:active{opacity:.7;}
+.skin-preview{width:60px;height:60px;border-radius:4px;}
+.skin-name{font-size:clamp(6px,1.2vw,8px);letter-spacing:.1em;text-align:center;}
+.skin-price{font-size:clamp(5px,1vw,7px);color:#ffaa00;}
+.skin-rarity{font-size:clamp(4px,.9vw,6px);letter-spacing:.1em;padding:2px 5px;border-radius:2px;}
+.rarity-free     {color:#aaffaa;background:rgba(170,255,170,.1);border:1px solid rgba(170,255,170,.3);}
+.rarity-rare     {color:#4488ff;background:rgba(68,136,255,.1);border:1px solid rgba(68,136,255,.3);}
+.rarity-epic     {color:#cc44ff;background:rgba(204,68,255,.1);border:1px solid rgba(204,68,255,.3);}
+.rarity-legendary{color:#ffaa00;background:rgba(255,170,0,.1);border:1px solid rgba(255,170,0,.4);}
+.skin-badge{position:absolute;top:4px;right:4px;font-size:8px;}
+.skin-card.equipped{box-shadow:0 0 12px currentColor,inset 0 0 8px color-mix(in srgb,currentColor 10%,transparent);}
+.skin-card.locked{opacity:.6;}
+
+/* Buy button */
+.buy-btn{width:100%;padding:5px;font-family:'Press Start 2P',monospace;font-size:clamp(5px,1vw,7px);
+  background:transparent;border:1px solid #ffaa00;color:#ffaa00;cursor:pointer;transition:all .2s;}
+.buy-btn:disabled{border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.3);cursor:default;}
+.buy-btn.equip-btn{border-color:var(--c);color:var(--c);}
+.buy-btn.equipped-btn{border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.5);cursor:default;}
+
+/* Particle effects section */
+.fx-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.fx-card{border:2px solid;padding:10px 8px;display:flex;flex-direction:column;align-items:center;
+  gap:6px;cursor:pointer;transition:all .2s;position:relative;}
+.fx-preview{font-size:28px;height:40px;display:flex;align-items:center;justify-content:center;}
+.fx-name{font-size:clamp(6px,1.2vw,8px);letter-spacing:.1em;text-align:center;}
+
+/* Fruit skins */
+.fruit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.fruit-card{border:2px solid;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;transition:all .2s;position:relative;}
+.fruit-preview{font-size:22px;height:32px;display:flex;align-items:center;justify-content:center;}
+.fruit-name{font-size:clamp(5px,1vw,6px);letter-spacing:.1em;text-align:center;}
+
+/* D-PAD */
+.dpad{display:none;margin-top:7px;position:relative;width:115px;height:115px;}
+.dpad button{position:absolute;width:35px;height:35px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.2);color:var(--c);font-size:14px;cursor:pointer;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;transition:color .4s;}
+.dpad button:active{background:rgba(255,255,255,.2);}
+.dpad .up{top:0;left:40px}.dpad .down{bottom:0;left:40px}
+.dpad .left{top:40px;left:0}.dpad .right{top:40px;right:0}
+@media(max-width:600px),(pointer:coarse){.dpad{display:block}.controls{display:none}}
+.controls{margin-top:5px;display:flex;gap:12px;font-size:clamp(5px,.9vw,6px);color:rgba(255,255,255,.25);letter-spacing:.1em;}
+
+#level.lvlup{animation:lp .5s ease;}
+@keyframes lp{0%{transform:scale(2.2);opacity:0}100%{transform:scale(1);opacity:1}}
+
+/* LEVEL UP FLASH */
+#levelup-flash{position:fixed;inset:0;pointer-events:none;z-index:50;opacity:0;}
+#levelup-flash.show{animation:lvflash .6s ease-out forwards;}
+@keyframes lvflash{0%{opacity:0}15%{opacity:.7;background:var(--c)}50%{opacity:.3}100%{opacity:0;background:var(--c)}}
+
+/* ANIMATED BG */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.4;}
+
+.sep{width:100%;height:1px;background:rgba(255,255,255,.08);margin:4px 0;}
+
+/* NAV BUTTONS */
+.nav-btn{padding:5px 8px;font-size:14px;background:transparent;border:1px solid rgba(255,255,255,.25);
+  color:#fff;cursor:pointer;border-radius:3px;transition:all .2s;}
+.nav-btn:active{opacity:.6;transform:scale(.93);}
+.nav-btn.active{border-color:#ffaa00;box-shadow:0 0 8px #ffaa00;}
+
+/* BIG MENU NAV */
+#menu-panel{display:flex;flex-direction:column;align-items:center;width:100%;}
+#menu-panel.hidden{display:none;}
+#hud-panel.hidden{display:none;}
+.menu-nav-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;width:100%;}
+.nav-btn-big{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 3px;
+  font-family:'Press Start 2P',monospace;font-size:14px;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.2);color:#fff;cursor:pointer;border-radius:4px;
+  transition:all .2s;letter-spacing:.05em;}
+.nav-btn-big span{font-size:clamp(4px,.8vw,5px);color:rgba(255,255,255,.5);letter-spacing:.1em;}
+.nav-btn-big:active{opacity:.6;transform:scale(.95);}
+.nav-btn-big:hover{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.08);}
+.nav-btn-big.active{border-color:#ffaa00;box-shadow:0 0 10px #ffaa00;}
+.pu-btn{width:100%;padding:5px 4px;font-family:'Press Start 2P',monospace;font-size:clamp(4px,.85vw,6px);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.2);color:#fff;cursor:pointer;letter-spacing:.05em;transition:all .2s;text-align:left;}
+.pu-btn:disabled{opacity:.3;cursor:default;}
+.pu-btn.active-pu{border-color:#ffdd00;color:#ffdd00;box-shadow:0 0 8px #ffdd00;}
+.challenge-header{text-align:center;margin-bottom:10px;}
+.challenge-reset{font-size:clamp(5px,1vw,7px);color:rgba(255,255,255,.4);letter-spacing:.1em;}
+.challenge-card{border:1px solid rgba(255,255,255,.15);padding:10px;margin-bottom:8px;
+  background:rgba(255,255,255,.03);position:relative;}
+.challenge-card.done{border-color:#00ff41;background:rgba(0,255,65,.05);}
+.challenge-card.claimed{border-color:rgba(255,255,255,.1);opacity:.5;}
+.challenge-title{font-size:clamp(6px,1.2vw,8px);color:#fff;margin-bottom:5px;letter-spacing:.05em;}
+.challenge-desc{font-size:clamp(5px,1vw,6px);color:rgba(255,255,255,.45);margin-bottom:7px;letter-spacing:.05em;}
+.challenge-progress{height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-bottom:7px;}
+.challenge-bar{height:100%;background:var(--c);border-radius:2px;transition:width .4s;}
+.challenge-foot{display:flex;justify-content:space-between;align-items:center;}
+.challenge-reward{font-size:clamp(6px,1.2vw,8px);color:#ffaa00;}
+.challenge-claim{padding:4px 10px;font-family:'Press Start 2P',monospace;font-size:clamp(5px,1vw,6px);
+  background:transparent;border:1px solid #00ff41;color:#00ff41;cursor:pointer;}
+.challenge-claim:disabled{border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.3);cursor:default;}
+.challenge-done-badge{font-size:clamp(5px,1vw,7px);color:#00ff41;}
+
+/* ACHIEVEMENTS */
+.achievement-card{border:1px solid rgba(255,255,255,.12);padding:10px;margin-bottom:8px;
+  display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.02);}
+.achievement-card.unlocked{border-color:#ffaa00;background:rgba(255,170,0,.05);}
+.achievement-icon{font-size:22px;min-width:30px;text-align:center;filter:grayscale(1);opacity:.4;}
+.achievement-card.unlocked .achievement-icon{filter:none;opacity:1;}
+.achievement-info{flex:1;}
+.achievement-name{font-size:clamp(6px,1.2vw,8px);color:rgba(255,255,255,.5);margin-bottom:4px;}
+.achievement-card.unlocked .achievement-name{color:#ffaa00;}
+.achievement-desc{font-size:clamp(5px,1vw,6px);color:rgba(255,255,255,.3);letter-spacing:.05em;}
+.achievement-card.unlocked .achievement-desc{color:rgba(255,255,255,.55);}
+.achievement-reward{font-size:clamp(5px,1vw,6px);color:#ffaa00;margin-top:3px;}
+
+#prestige-screen{position:fixed;inset:0;background:rgba(10,10,15,.97);z-index:100;
+  display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:16px 12px 24px;}
+#prestige-screen.hidden{display:none;}
+
+#leaderboard-screen{position:fixed;inset:0;background:rgba(10,10,15,.97);z-index:100;
+  display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:16px 12px 24px;}
+#leaderboard-screen.hidden{display:none;}
+.lb-row{display:flex;align-items:center;gap:8px;padding:8px;margin-bottom:6px;
+  border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);}
+.lb-row.lb-top1{border-color:#ffdd00;background:rgba(255,221,0,.05);}
+.lb-row.lb-top2{border-color:#aaaaaa;background:rgba(170,170,170,.04);}
+.lb-row.lb-top3{border-color:#cc7700;background:rgba(204,119,0,.04);}
+.lb-rank{font-size:clamp(8px,1.6vw,11px);min-width:24px;text-align:center;color:#fff;}
+.lb-name{flex:1;font-size:clamp(6px,1.2vw,8px);letter-spacing:.1em;color:#fff;}
+.lb-mode-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;}
+.lb-score{font-size:clamp(7px,1.4vw,9px);color:#ffaa00;text-shadow:0 0 6px #ffaa00;}
+.lb-level{font-size:clamp(5px,1vw,6px);color:rgba(255,255,255,.35);margin-left:6px;}
+.lb-empty{font-size:clamp(6px,1.2vw,8px);color:rgba(255,255,255,.3);text-align:center;padding:30px;letter-spacing:.1em;}
+
+#stats-screen{position:fixed;inset:0;background:rgba(10,10,15,.97);z-index:100;
+  display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:16px 12px 24px;}
+#stats-screen.hidden{display:none;}
+.stats-section-title{font-size:clamp(6px,1.2vw,8px);color:rgba(255,255,255,.5);letter-spacing:.15em;margin-bottom:4px;}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;
+  border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02);}
+.stat-label{font-size:clamp(5px,1vw,7px);color:rgba(255,255,255,.4);letter-spacing:.1em;}
+.stat-val{font-size:clamp(7px,1.4vw,9px);color:var(--c);text-shadow:0 0 6px var(--c);}
+
+#spin-screen{position:fixed;inset:0;background:rgba(10,10,15,.97);z-index:100;display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:16px 12px 24px;}
+#spin-screen.hidden{display:none;}
+#login-popup.hidden{display:none!important;}
+#inventory-screen{position:fixed;inset:0;background:rgba(10,10,15,.97);z-index:100;display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:16px 12px 24px;}
+#inventory-screen.hidden{display:none;}
+#settings-screen{position:fixed;inset:0;background:rgba(10,10,15,.97);z-index:100;
+  display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:16px 12px 24px;}
+#settings-screen.hidden{display:none;}
+
+/* TOAST NOTIFICATION */
+#toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
+  background:rgba(10,10,15,.95);border:1px solid var(--c);box-shadow:0 0 14px var(--c);
+  color:var(--c);font-family:'Press Start 2P',monospace;font-size:clamp(6px,1.2vw,8px);
+  padding:10px 18px;z-index:200;pointer-events:none;opacity:0;transition:opacity .3s;
+  text-align:center;max-width:280px;letter-spacing:.07em;}
+#toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<div id="levelup-flash"></div>
+<div id="toast"></div>
+<div class="scanlines"></div>
+
+<div class="left-panel">
+  <div class="mode-badge" id="mode-badge">CLASSIC</div>
+
+  <!-- Shown before game starts -->
+  <div id="menu-panel">
+    <div class="coin-display" style="margin-bottom:10px;justify-content:center;">
+      <span class="coin-icon"><svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;margin-right:1px"><defs><radialGradient id="cg" cx="35%" cy="35%"><stop offset="0%" stop-color="#fff7aa"/><stop offset="40%" stop-color="#ffdd00"/><stop offset="100%" stop-color="#aa6600"/></radialGradient></defs><circle cx="7" cy="7" r="6.5" fill="#aa6600"/><circle cx="7" cy="7" r="5.5" fill="url(#cg)"/><circle cx="7" cy="7" r="3.5" fill="none" stroke="#cc8800" stroke-width="0.8" opacity="0.6"/><text x="7" y="10" text-anchor="middle" font-size="6" font-weight="bold" fill="#aa5500" font-family="serif">$</text></svg></span><span id="coin-display">0</span>
+    </div>
+    <div class="menu-nav-grid">
+      <button class="nav-btn-big" id="inventory-btn">🎒<span>INVENTAR</span></button>
+      <button class="nav-btn-big" id="locker-btn">🏪<span>SHOP</span></button>
+      <button class="nav-btn-big" id="challenges-btn">📅<span>CHALLENGES</span></button>
+      <button class="nav-btn-big" id="achievements-btn">🏆<span>ERFOLGE</span></button>
+      <button class="nav-btn-big" id="prestige-btn">🏅<span>PRESTIGE</span></button>
+      <button class="nav-btn-big" id="leaderboard-btn">🥇<span>BESTENLISTE</span></button>
+      <button class="nav-btn-big" id="stats-btn">📊<span>STATISTIKEN</span></button>
+      <button class="nav-btn-big" id="spin-btn-nav">🎰<span>GLÜCKSRAD</span></button>
+      <button class="nav-btn-big" id="settings-btn">⚙️<span>EINSTELLUNGEN</span></button>
+    </div>
+  </div>
+
+  <!-- Shown during game -->
+  <div id="hud-panel" class="hidden">
+    <div class="coin-display" style="margin-bottom:8px;justify-content:center;">
+      <span class="coin-icon"><svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;margin-right:1px"><defs><radialGradient id="cg" cx="35%" cy="35%"><stop offset="0%" stop-color="#fff7aa"/><stop offset="40%" stop-color="#ffdd00"/><stop offset="100%" stop-color="#aa6600"/></radialGradient></defs><circle cx="7" cy="7" r="6.5" fill="#aa6600"/><circle cx="7" cy="7" r="5.5" fill="url(#cg)"/><circle cx="7" cy="7" r="3.5" fill="none" stroke="#cc8800" stroke-width="0.8" opacity="0.6"/><text x="7" y="10" text-anchor="middle" font-size="6" font-weight="bold" fill="#aa5500" font-family="serif">$</text></svg></span><span id="coin-display-2">0</span>
+    </div>
+    <div class="hud">
+      <div class="hud-item"><span class="hud-label">SCORE</span><span class="hud-value" id="score">0</span></div>
+      <div class="hud-item"><span class="hud-label">LEVEL</span><span class="hud-value" id="level">1</span></div>
+      <div class="hud-item"><span class="hud-label">FRÜCHTE</span><span class="hud-value" id="fruits">0/3</span></div>
+      <div class="hud-item"><span class="hud-label">LÄNGE</span><span class="hud-value" id="length">3</span></div>
+      <div class="hud-item"><span class="hud-label">BEST</span><span class="hud-value" id="best">0</span></div>
+      <div class="sep"></div>
+      <div id="powerup-btns" style="display:flex;flex-direction:column;gap:3px;width:100%;">
+        <div style="display:flex;flex-direction:column;gap:2px;width:100%;">
+          <button class="pu-btn" id="pu-slow-btn" onclick="usePowerup('slow')">⚡ ZEITLUPE <span id="pu-slow-count">0x</span></button>
+          <div id="pu-slow-bar" style="height:3px;width:0%;background:#00ccff;border-radius:2px;transition:width .1s;display:none;"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;width:100%;">
+          <button class="pu-btn" id="pu-coin-btn" onclick="usePowerup('coin')">💰 COINS <span id="pu-coin-count">0x</span></button>
+          <div id="pu-coin-bar" style="height:3px;width:0%;background:#ffdd00;border-radius:2px;transition:width .1s;display:none;"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;width:100%;">
+          <button class="pu-btn" id="pu-fruit-btn" onclick="usePowerup('fruit')">🍎 FRÜCHTE <span id="pu-fruit-count">0x</span></button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;width:100%;">
+          <button class="pu-btn" id="pu-shrink-btn" onclick="usePowerup('shrink')">✂️ SHRINK <span id="pu-shrink-count">0x</span></button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;width:100%;">
+          <button class="pu-btn" id="pu-dscore-btn" onclick="usePowerup('dscore')">🔥 2x SCORE <span id="pu-dscore-count">0x</span></button>
+          <div id="pu-dscore-bar" style="height:3px;width:0%;background:#ff4400;border-radius:2px;transition:width .1s;display:none;"></div>
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div id="combo-hud" style="display:none;width:100%;padding:4px;border:1px solid #ffdd00;background:rgba(255,221,0,.08);box-shadow:0 0 10px #ffdd00;text-align:center;">
+        <div style="font-size:clamp(5px,1vw,6px);color:#ffdd00;letter-spacing:.1em;">⚡ COMBO AKTIV</div>
+        <div id="combo-val" style="font-size:clamp(9px,1.8vw,12px);color:#ffdd00;text-shadow:0 0 10px #ffdd00;font-weight:bold;">2x COINS</div>
+        <div id="combo-timer-bar" style="height:3px;width:100%;background:#ffdd00;border-radius:2px;margin-top:3px;transition:width 5s linear;"></div>
+      </div>
+      <div class="sep"></div>
+      <div class="hud-item"><span class="hud-label">SPIELE</span><span class="hud-value" id="stat-games">0</span></div>
+      <div class="hud-item"><span class="hud-label">FRÜCHTE∑</span><span class="hud-value" id="stat-fruits">0</span></div>
+      <div class="hud-item"><span class="hud-label">PRESTIGE</span><span class="hud-value" id="stat-prestige">0</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="right-panel">
+  <div id="game-title-bar" style="width:100%;text-align:center;font-family:'Press Start 2P',monospace;font-size:clamp(8px,1.6vw,11px);color:var(--c);text-shadow:0 0 8px var(--c);letter-spacing:.2em;margin-bottom:4px;">◀ RETRO-SNAKE ▶</div>
+  <div class="canvas-wrapper" id="canvas-wrapper">
+  <canvas id="canvas"></canvas>
+
+  <!-- Name entry -->
+  <div id="name-screen">
+    <div class="name-title">DEIN NAME</div>
+    <div class="name-sub">MAX. 8 ZEICHEN</div>
+    <input id="name-input" maxlength="8" placeholder="NAME" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">
+    <button id="name-ok">✓ OK</button>
+  </div>
+
+  <!-- Main overlay -->
+  <div class="overlay hidden" id="overlay">
+    <div class="o-title" id="o-title">WÄHLE MODUS</div>
+    <div class="o-sub"  id="o-sub"></div>
+    <div class="mode-grid" id="mode-grid">
+      <button class="mode-btn classic selected" data-mode="classic"><span class="mode-icon">🟢</span>CLASSIC<span class="mode-desc">NORMAL</span><span class="mode-best" id="best-classic"></span></button>
+      <button class="mode-btn ghost" data-mode="ghost"><span class="mode-icon">👻</span>GHOST<span class="mode-desc">DURCH SICH SELBST</span><span class="mode-best" id="best-ghost"></span></button>
+      <button class="mode-btn tunnel" data-mode="tunnel"><span class="mode-icon">🌀</span>TUNNEL<span class="mode-desc">WÄNDE TELEPORT</span><span class="mode-best" id="best-tunnel"></span></button>
+      <button class="mode-btn hardcore" data-mode="hardcore"><span class="mode-icon">💀</span>HARDCORE<span class="mode-desc">SCHNELLER</span><span class="mode-best" id="best-hardcore"></span></button>
+      <button class="mode-btn maze" data-mode="maze"><span class="mode-icon">🧩</span>MAZE<span class="mode-desc">HINDERNISSE</span><span class="mode-best" id="best-maze"></span></button>
+    </div>
+    <div class="o-score hidden" id="o-score"></div>
+    <div class="btn-row">
+      <button id="start-btn" class="action-btn green">▶ START</button>
+      <button id="menu-btn" class="action-btn gray" style="display:none;">🏠 MENÜ</button>
+      <button id="rebirth-btn" class="action-btn gold" style="display:none;">💫 REBIRTH</button>
+    </div>
+    <div class="o-hint" id="o-hint"></div>
+  </div>
+  </div><!-- end canvas-wrapper -->
+
+  <div class="btn-row" style="margin-top:6px;">
+    <button id="pause-btn">⏸ PAUSE</button>
+  </div>
+  <div class="dpad">
+    <button class="up" id="d-up">▲</button><button class="down" id="d-down">▼</button>
+    <button class="left" id="d-left">◀</button><button class="right" id="d-right">▶</button>
+  </div>
+  <div class="controls"><span>↑↓←→ / WASD</span><span>P=PAUSE</span></div>
+</div><!-- end right-panel -->
+
+<!-- SHOP -->
+<div id="locker-room" class="hidden">
+  <div class="lr-header">
+    <div class="lr-title">🏪 SHOP</div>
+    <div class="lr-coins"><svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;margin-right:1px"><defs><radialGradient id="cg" cx="35%" cy="35%"><stop offset="0%" stop-color="#fff7aa"/><stop offset="40%" stop-color="#ffdd00"/><stop offset="100%" stop-color="#aa6600"/></radialGradient></defs><circle cx="7" cy="7" r="6.5" fill="#aa6600"/><circle cx="7" cy="7" r="5.5" fill="url(#cg)"/><circle cx="7" cy="7" r="3.5" fill="none" stroke="#cc8800" stroke-width="0.8" opacity="0.6"/><text x="7" y="10" text-anchor="middle" font-size="6" font-weight="bold" fill="#aa5500" font-family="serif">$</text></svg> <span id="lr-coins">0</span></div>
+    <button class="lr-close" id="lr-close">✕</button>
+  </div>
+  <div class="lr-tabs">
+    <button class="lr-tab active" data-tab="skins">🎨 SKINS</button>
+    <button class="lr-tab" data-tab="fruits">🍎 FRÜCHTE</button>
+    <button class="lr-tab" data-tab="bg">🌌 HINTERGR.</button>
+    <button class="lr-tab" data-tab="powerups">⚡ POWER-UPS</button>
+    <button class="lr-tab" data-tab="codes">🔑 CODES</button>
+  </div>
+  <div class="lr-section" id="tab-skins"><div class="skin-grid" id="skin-grid"></div></div>
+  <div class="lr-section" id="tab-fruits"><div class="fruit-grid" id="fruit-grid"></div></div>
+  <div class="lr-section" id="tab-powerups"><div class="skin-grid" id="powerup-grid"></div></div>
+  <div class="lr-section" id="tab-bg"><div class="skin-grid" id="bg-grid"></div></div>
+  <div class="lr-section" id="tab-codes">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px 8px;width:100%;">
+      <div style="font-size:clamp(6px,1.2vw,8px);color:rgba(255,255,255,.4);letter-spacing:.1em;text-align:center;">CODE EINGEBEN</div>
+      <input id="cheat-input" maxlength="12" placeholder="XXXXX" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="characters"
+        style="background:transparent;border:none;border-bottom:2px solid var(--c);color:var(--c);
+        font-family:'Press Start 2P',monospace;font-size:clamp(10px,2vw,14px);text-align:center;
+        outline:none;width:200px;padding:6px;letter-spacing:.2em;caret-color:var(--c);">
+      <button id="cheat-submit" class="action-btn green" style="font-size:clamp(7px,1.4vw,9px);">✓ EINLÖSEN</button>
+      <div id="cheat-msg" style="font-size:clamp(5px,1vw,7px);min-height:14px;letter-spacing:.1em;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CHALLENGES SCREEN -->
+<div id="challenges-screen" class="hidden">
+  <div class="lr-header">
+    <div class="lr-title">📅 CHALLENGES</div>
+    <div class="lr-coins"><svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;margin-right:1px"><defs><radialGradient id="cg" cx="35%" cy="35%"><stop offset="0%" stop-color="#fff7aa"/><stop offset="40%" stop-color="#ffdd00"/><stop offset="100%" stop-color="#aa6600"/></radialGradient></defs><circle cx="7" cy="7" r="6.5" fill="#aa6600"/><circle cx="7" cy="7" r="5.5" fill="url(#cg)"/><circle cx="7" cy="7" r="3.5" fill="none" stroke="#cc8800" stroke-width="0.8" opacity="0.6"/><text x="7" y="10" text-anchor="middle" font-size="6" font-weight="bold" fill="#aa5500" font-family="serif">$</text></svg> <span id="ch-coins">0</span></div>
+    <button class="lr-close" id="ch-close">✕</button>
+  </div>
+  <div class="lr-tabs">
+    <button class="lr-tab active" data-tab="daily">☀️ DAILY</button>
+    <button class="lr-tab" data-tab="monthly">📆 MONTHLY</button>
+    <button class="lr-tab" data-tab="seasonal">🌸 SAISON</button>
+  </div>
+  <div class="lr-section active" id="tab-daily">
+    <div class="challenge-header"><div class="challenge-reset" id="daily-reset">🔄 RESET IN: --:--:--</div></div>
+    <div id="daily-list"></div>
+  </div>
+  <div class="lr-section" id="tab-monthly">
+    <div class="challenge-header"><div class="challenge-reset" id="monthly-reset">🔄 RESET IN: -- TAGE</div></div>
+    <div id="monthly-list"></div>
+  </div>
+  <div class="lr-section" id="tab-seasonal">
+    <div class="challenge-header"><div class="challenge-reset" id="seasonal-info">🌸 AKTUELLE SAISON</div></div>
+    <div id="seasonal-list"></div>
+  </div>
+</div>
+
+<!-- ACHIEVEMENTS SCREEN -->
+<div id="achievements-screen" class="hidden">
+  <div class="lr-header">
+    <div class="lr-title">🏆 ERFOLGE</div>
+    <div class="lr-coins"><svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;margin-right:1px"><defs><radialGradient id="cg" cx="35%" cy="35%"><stop offset="0%" stop-color="#fff7aa"/><stop offset="40%" stop-color="#ffdd00"/><stop offset="100%" stop-color="#aa6600"/></radialGradient></defs><circle cx="7" cy="7" r="6.5" fill="#aa6600"/><circle cx="7" cy="7" r="5.5" fill="url(#cg)"/><circle cx="7" cy="7" r="3.5" fill="none" stroke="#cc8800" stroke-width="0.8" opacity="0.6"/><text x="7" y="10" text-anchor="middle" font-size="6" font-weight="bold" fill="#aa5500" font-family="serif">$</text></svg> <span id="ac-coins">0</span></div>
+    <button class="lr-close" id="ac-close">✕</button>
+  </div>
+  <div style="width:100%;max-width:400px;margin-bottom:8px;">
+    <div id="ach-progress-bar" style="height:6px;background:rgba(255,255,255,.1);border-radius:3px;">
+      <div id="ach-progress-fill" style="height:100%;background:#ffaa00;border-radius:3px;transition:width .4s;width:0%"></div>
+    </div>
+    <div id="ach-progress-text" style="font-size:6px;color:rgba(255,255,255,.35);text-align:center;margin-top:4px;letter-spacing:.1em;">0 / 15 ERFOLGE</div>
+  </div>
+  <div id="achievement-list"></div>
+</div>
+
+<!-- PRESTIGE SCREEN -->
+<div id="prestige-screen" class="hidden">
+  <div class="lr-header">
+    <div class="lr-title">🏅 PRESTIGE</div>
+    <div class="lr-coins"><svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;margin-right:1px"><defs><radialGradient id="cg" cx="35%" cy="35%"><stop offset="0%" stop-color="#fff7aa"/><stop offset="40%" stop-color="#ffdd00"/><stop offset="100%" stop-color="#aa6600"/></radialGradient></defs><circle cx="7" cy="7" r="6.5" fill="#aa6600"/><circle cx="7" cy="7" r="5.5" fill="url(#cg)"/><circle cx="7" cy="7" r="3.5" fill="none" stroke="#cc8800" stroke-width="0.8" opacity="0.6"/><text x="7" y="10" text-anchor="middle" font-size="6" font-weight="bold" fill="#aa5500" font-family="serif">$</text></svg> <span id="pr-coins">0</span></div>
+    <button class="lr-close" id="pr-close">✕</button>
+  </div>
+  <div style="width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:12px;padding:8px;">
+    <div id="prestige-badge-display" style="font-size:48px;text-shadow:0 0 20px #ffaa00;">🏅</div>
+    <div id="prestige-level-display" style="font-size:clamp(10px,2vw,14px);color:#ffaa00;letter-spacing:.2em;text-shadow:0 0 8px #ffaa00;">PRESTIGE ✦0</div>
+    <div style="font-size:clamp(5px,1.1vw,7px);color:rgba(255,255,255,.4);text-align:center;line-height:1.8;letter-spacing:.05em;">
+      PRESTIGE GIBT DIR DAUERHAFT MEHR COINS &amp; SCORE.<br>NICHTS WIRD ZURÜCKGESETZT — ALLES BLEIBT!<br>AB LEVEL 10 VERFÜGBAR (+1 PRO PRESTIGE).
+    </div>
+    <div style="width:100%;border:1px solid rgba(255,255,255,.1);padding:12px;background:rgba(255,255,255,.03);">
+      <div style="font-size:clamp(5px,1vw,7px);color:rgba(255,255,255,.35);letter-spacing:.1em;margin-bottom:8px;">PRESTIGE BONUS:</div>
+      <div id="prestige-perks" style="font-size:clamp(5px,1vw,7px);color:#ffaa00;line-height:2;letter-spacing:.05em;"></div>
+    </div>
+    <div id="prestige-req" style="font-size:clamp(5px,1vw,7px);color:rgba(255,255,255,.3);letter-spacing:.1em;"></div>
+    <button id="prestige-confirm-btn" class="action-btn gold" style="font-size:clamp(7px,1.5vw,9px);" disabled>🏅 PRESTIGE!</button>
+  </div>
+</div>
+
+<!-- LEADERBOARD SCREEN -->
+<div id="leaderboard-screen" class="hidden">
+  <div class="lr-header">
+    <div class="lr-title">🏆 BESTENLISTE</div>
+    <div class="lr-coins"><svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;margin-right:1px"><defs><radialGradient id="cg" cx="35%" cy="35%"><stop offset="0%" stop-color="#fff7aa"/><stop offset="40%" stop-color="#ffdd00"/><stop offset="100%" stop-color="#aa6600"/></radialGradient></defs><circle cx="7" cy="7" r="6.5" fill="#aa6600"/><circle cx="7" cy="7" r="5.5" fill="url(#cg)"/><circle cx="7" cy="7" r="3.5" fill="none" stroke="#cc8800" stroke-width="0.8" opacity="0.6"/><text x="7" y="10" text-anchor="middle" font-size="6" font-weight="bold" fill="#aa5500" font-family="serif">$</text></svg> <span id="lb-coins">0</span></div>
+    <button class="lr-close" id="lb-close">✕</button>
+  </div>
+  <div class="lr-tabs">
+    <button class="lr-tab active" data-lbtab="all">🌍 ALLE</button>
+    <button class="lr-tab" data-lbtab="classic">🟢 CLASSIC</button>
+    <button class="lr-tab" data-lbtab="ghost">👻 GHOST</button>
+    <button class="lr-tab" data-lbtab="tunnel">🌀 TUNNEL</button>
+    <button class="lr-tab" data-lbtab="hardcore">💀 HARDCORE</button>
+    <button class="lr-tab" data-lbtab="maze">🧩 MAZE</button>
+  </div>
+  <div id="leaderboard-list" style="width:100%;max-width:400px;"></div>
+</div>
+
+<!-- STATS SCREEN -->
+<div id="stats-screen" class="hidden">
+  <div class="lr-header">
+    <div class="lr-title">📊 STATISTIKEN</div>
+    <div class="lr-coins"><svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;margin-right:1px"><defs><radialGradient id="cg" cx="35%" cy="35%"><stop offset="0%" stop-color="#fff7aa"/><stop offset="40%" stop-color="#ffdd00"/><stop offset="100%" stop-color="#aa6600"/></radialGradient></defs><circle cx="7" cy="7" r="6.5" fill="#aa6600"/><circle cx="7" cy="7" r="5.5" fill="url(#cg)"/><circle cx="7" cy="7" r="3.5" fill="none" stroke="#cc8800" stroke-width="0.8" opacity="0.6"/><text x="7" y="10" text-anchor="middle" font-size="6" font-weight="bold" fill="#aa5500" font-family="serif">$</text></svg> <span id="st-coins">0</span></div>
+    <button class="lr-close" id="st-close">✕</button>
+  </div>
+  <div style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:8px;padding:8px;">
+    <div class="stats-section-title">🔥 STREAK</div>
+    <div class="stat-row"><span class="stat-label">AKTUELLER STREAK</span><span class="stat-val" id="st-streak" style="color:#ff6600;text-shadow:0 0 6px #ff6600;">0</span></div>
+    <div class="stat-row"><span class="stat-label">BESTER STREAK</span><span class="stat-val" id="st-best-streak" style="color:#ff6600;text-shadow:0 0 6px #ff6600;">0</span></div>
+    <div class="sep"></div>
+    <div class="stats-section-title">🎮 SPIELVERLAUF</div>
+    <div class="stat-row"><span class="stat-label">SPIELE GESAMT</span><span class="stat-val" id="st-games">0</span></div>
+    <div class="stat-row"><span class="stat-label">BESTE PUNKTZAHL</span><span class="stat-val" id="st-score">0</span></div>
+    <div class="stat-row"><span class="stat-label">BESTES LEVEL</span><span class="stat-val" id="st-level">0</span></div>
+    <div class="stat-row"><span class="stat-label">LÄNGSTE SCHLANGE</span><span class="stat-val" id="st-length">0</span></div>
+    <div class="sep"></div>
+    <div class="stats-section-title">🍎 FRÜCHTE</div>
+    <div class="stat-row"><span class="stat-label">FRÜCHTE GESAMT</span><span class="stat-val" id="st-fruits">0</span></div>
+    <div class="stat-row"><span class="stat-label">LIEBLINGS-MODUS</span><span class="stat-val" id="st-mode">-</span></div>
+    <div class="sep"></div>
+    <div class="stats-section-title"><svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;margin-right:1px"><defs><radialGradient id="cg" cx="35%" cy="35%"><stop offset="0%" stop-color="#fff7aa"/><stop offset="40%" stop-color="#ffdd00"/><stop offset="100%" stop-color="#aa6600"/></radialGradient></defs><circle cx="7" cy="7" r="6.5" fill="#aa6600"/><circle cx="7" cy="7" r="5.5" fill="url(#cg)"/><circle cx="7" cy="7" r="3.5" fill="none" stroke="#cc8800" stroke-width="0.8" opacity="0.6"/><text x="7" y="10" text-anchor="middle" font-size="6" font-weight="bold" fill="#aa5500" font-family="serif">$</text></svg> COINS</div>
+    <div class="stat-row"><span class="stat-label">COINS VERDIENT</span><span class="stat-val" id="st-earned">0</span></div>
+    <div class="stat-row"><span class="stat-label">COINS AUSGEGEBEN</span><span class="stat-val" id="st-spent">0</span></div>
+    <div class="stat-row"><span class="stat-label">PRESTIGE LEVEL</span><span class="stat-val" id="st-prestige">0</span></div>
+    <div class="sep"></div>
+    <button id="reset-stats-btn" style="padding:8px;font-family:'Press Start 2P',monospace;font-size:clamp(5px,1vw,7px);background:transparent;border:1px solid rgba(255,50,50,.4);color:rgba(255,80,80,.6);cursor:pointer;width:100%;letter-spacing:.05em;">🗑 STATS ZURÜCKSETZEN</button>
+  </div>
+</div>
+
+<!-- SETTINGS SCREEN -->
+<div id="settings-screen" class="hidden">
+  <div class="lr-header">
+    <div class="lr-title">⚙️ EINSTELLUNGEN</div>
+    <button class="lr-close" id="settings-close">✕</button>
+  </div>
+  <div style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:12px;padding:16px 8px;">
+    <div class="stat-row" style="flex-direction:column;align-items:flex-start;gap:8px;padding:12px 8px;">
+      <span class="stat-label" style="font-size:clamp(7px,1.4vw,9px);">👾 NAME</span>
+      <div style="display:flex;gap:8px;width:100%;align-items:center;">
+        <input id="settings-name-input" maxlength="8" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" style="flex:1;background:transparent;border:none;border-bottom:2px solid #00ccff;color:#00ccff;font-family:'Press Start 2P',monospace;font-size:clamp(8px,1.6vw,11px);outline:none;padding:4px;letter-spacing:.1em;caret-color:#00ccff;">
+        <button id="change-name-btn" style="padding:6px 12px;font-family:'Press Start 2P',monospace;font-size:clamp(5px,1vw,7px);background:transparent;border:2px solid #00ccff;color:#00ccff;cursor:pointer;box-shadow:0 0 8px #00ccff;">✓ OK</button>
+      </div>
+    </div>
+    <div class="stat-row" style="justify-content:space-between;align-items:center;padding:12px 8px;">
+      <span class="stat-label" style="font-size:clamp(7px,1.4vw,9px);">🔊 TON</span>
+      <button id="sound-toggle" style="padding:6px 14px;font-family:'Press Start 2P',monospace;font-size:clamp(6px,1.2vw,8px);background:transparent;border:2px solid #00ff41;color:#00ff41;cursor:pointer;box-shadow:0 0 8px #00ff41;">AN</button>
+    </div>
+    <div class="stat-row" style="justify-content:space-between;align-items:center;padding:12px 8px;">
+      <span class="stat-label" style="font-size:clamp(7px,1.4vw,9px);">📳 VIBRATION</span>
+      <button id="vibration-toggle" style="padding:6px 14px;font-family:'Press Start 2P',monospace;font-size:clamp(6px,1.2vw,8px);background:transparent;border:2px solid #00ff41;color:#00ff41;cursor:pointer;box-shadow:0 0 8px #00ff41;">AN</button>
+    </div>
+    <div class="stat-row" style="justify-content:space-between;align-items:center;padding:12px 8px;">
+      <span class="stat-label" style="font-size:clamp(7px,1.4vw,9px);">🎵 MUSIK</span>
+      <button id="music-toggle" style="padding:6px 14px;font-family:'Press Start 2P',monospace;font-size:clamp(6px,1.2vw,8px);background:transparent;border:2px solid #00ff41;color:#00ff41;cursor:pointer;box-shadow:0 0 8px #00ff41;">AN</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- LOGIN POPUP -->
+<div id="login-popup" class="hidden" style="position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;">
+  <div style="background:#0a0a0f;border:2px solid #ffaa00;box-shadow:0 0 30px #ffaa00;padding:24px 20px;max-width:320px;width:90%;display:flex;flex-direction:column;align-items:center;gap:12px;font-family:'Press Start 2P',monospace;">
+    <div style="font-size:clamp(10px,2vw,14px);color:#ffaa00;text-shadow:0 0 10px #ffaa00;letter-spacing:.2em;">🎁 LOGIN BONUS</div>
+    <div id="login-streak-txt" style="font-size:clamp(6px,1.2vw,8px);color:rgba(255,255,255,.6);letter-spacing:.1em;">TAG 1</div>
+    <div id="login-coins-txt" style="font-size:clamp(20px,4vw,32px);color:#ffdd00;text-shadow:0 0 20px #ffdd00;">+10🪙</div>
+    <div id="login-fire-txt" style="font-size:clamp(7px,1.4vw,9px);color:#ff6600;min-height:16px;"></div>
+    <button id="login-claim-btn" style="padding:10px 24px;font-family:'Press Start 2P',monospace;font-size:clamp(7px,1.4vw,9px);background:transparent;border:2px solid #ffaa00;color:#ffaa00;cursor:pointer;box-shadow:0 0 12px #ffaa00;letter-spacing:.1em;">✓ EINLÖSEN</button>
+  </div>
+</div>
+
+<!-- SPIN WHEEL SCREEN -->
+<div id="spin-screen" class="hidden">
+  <div class="lr-header">
+    <div class="lr-title">🎰 GLÜCKSRAD</div>
+    <div class="lr-coins"><svg width="14" height="14" viewBox="0 0 14 14" style="display:inline-block;vertical-align:middle;margin-right:1px"><defs><radialGradient id="cg" cx="35%" cy="35%"><stop offset="0%" stop-color="#fff7aa"/><stop offset="40%" stop-color="#ffdd00"/><stop offset="100%" stop-color="#aa6600"/></radialGradient></defs><circle cx="7" cy="7" r="6.5" fill="#aa6600"/><circle cx="7" cy="7" r="5.5" fill="url(#cg)"/><circle cx="7" cy="7" r="3.5" fill="none" stroke="#cc8800" stroke-width="0.8" opacity="0.6"/><text x="7" y="10" text-anchor="middle" font-size="6" font-weight="bold" fill="#aa5500" font-family="serif">$</text></svg> <span id="spin-coins">0</span></div>
+    <button class="lr-close" id="spin-close">✕</button>
+  </div>
+  <div style="width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:16px;padding:16px 8px;">
+    <div id="spin-timer-txt" style="font-size:clamp(6px,1.2vw,8px);color:rgba(255,255,255,.5);letter-spacing:.1em;"></div>
+    <button id="buy-spin-btn" style="padding:6px 14px;font-family:'Press Start 2P',monospace;font-size:clamp(5px,1vw,7px);background:transparent;border:1px solid #ffaa00;color:#ffaa00;cursor:pointer;display:none;">+ SPIN KAUFEN (1000🪙)</button>
+    <div style="position:relative;width:240px;height:240px;">
+      <canvas id="spin-canvas" width="240" height="240"></canvas>
+      <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:20px;">▼</div>
+    </div>
+    <div id="spin-result" style="font-size:clamp(8px,1.6vw,11px);color:#ffdd00;text-shadow:0 0 10px #ffdd00;min-height:20px;letter-spacing:.1em;"></div>
+    <button id="spin-btn" style="padding:12px 28px;font-family:'Press Start 2P',monospace;font-size:clamp(8px,1.6vw,10px);background:transparent;border:2px solid #00ff41;color:#00ff41;cursor:pointer;box-shadow:0 0 12px #00ff41;letter-spacing:.1em;">🎰 DREHEN!</button>
+  </div>
+</div>
+
+<!-- INVENTORY SCREEN -->
+<div id="inventory-screen" class="hidden">
+  <div class="lr-header">
+    <div class="lr-title">🎒 INVENTAR</div>
+    <div class="lr-coins">🪙 <span id="inv-coins">0</span></div>
+    <button class="lr-close" id="inv-close">✕</button>
+  </div>
+  <div id="inventory-list" style="width:100%;max-width:400px;padding:0 4px;"></div>
+</div>
+
+<script>
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+
+/* ══════════════════════════════
+   SKIN / SHOP DATA
+══════════════════════════════ */
+const SKINS = [
+  // FREE
+  { id:'classic',   name:'CLASSIC',    rarity:'free',      price:0,    colors:['#00ff41','#00cc33','#009922'], glow:'#00ff41' },
+  // SELTEN
+  { id:'fire',      name:'FEUER',      rarity:'rare',      price:2000,  colors:['#ff6600','#ff3300','#ff0000'], glow:'#ff4400', animate:'fire' },
+  { id:'ice',       name:'EIS',        rarity:'rare',      price:2000,  colors:['#88eeff','#44aacc','#2266aa'], glow:'#66ccff', animate:'ice' },
+  { id:'neonpink',  name:'NEON PINK',  rarity:'rare',      price:2000,  colors:['#ff44cc','#cc2299','#990066'], glow:'#ff44cc' },
+  { id:'shadow',    name:'SHADOW',     rarity:'rare',      price:2000,  colors:['#441166','#220033','#110022'], glow:'#8800ff', animate:'shadow', outerGlow:true },
+  { id:'gold',      name:'GOLD',       rarity:'rare',      price:2000,  colors:['#ffdd00','#ffaa00','#ff7700'], glow:'#ffcc00', animate:'gold' },
+  { id:'crystal',   name:'KRISTALL',   rarity:'rare',      price:2000,  colors:['#aaeeff','#ffffff','#88ccff'], glow:'#ffffff', animate:'crystal' },
+  { id:'ocean',     name:'OZEAN',      rarity:'rare',      price:2000,  colors:['#0066aa','#0088cc','#00aaee'], glow:'#00bbff', animate:'ocean' },
+  { id:'clover',    name:'KLEE',       rarity:'rare',      price:2000,  colors:['#00aa44','#00cc55','#00ff66'], glow:'#00ff44', animate:'clover' },
+  // EPISCH
+  { id:'rainbow',   name:'REGENBOGEN', rarity:'epic',      price:5000, colors:['#ff0000','#ff8800','#ffff00'], glow:'#ffffff', animate:'rainbow' },
+  { id:'electric',  name:'ELEKTRO',    rarity:'epic',      price:5000, colors:['#00ffff','#0088ff','#4400ff'], glow:'#00ffff', animate:'electric' },
+  { id:'water',     name:'WASSER',     rarity:'epic',      price:5000, colors:['#0066ff','#0044cc','#002288'], glow:'#0088ff', animate:'water' },
+  { id:'plasma',    name:'PLASMA',     rarity:'epic',      price:5000, colors:['#ff00ff','#8800ff','#4400cc'], glow:'#ff00ff', animate:'plasma' },
+  // EXKLUSIV (nur Glücksrad)
+  { id:'spin',      name:'GLÜCKSRAD',  rarity:'legendary', price:-1,   colors:['#ff0000','#ff8800','#ffff00','#00ff00','#0088ff','#cc44ff'], glow:'#ffffff', animate:'spin_exclusive' },
+  { id:'crystal2',  name:'KRISTALL',   rarity:'epic',      price:5000, colors:['#8844ff','#6622dd','#4400bb'], glow:'#aa66ff', animate:'crystal2' },
+  { id:'meteor',    name:'METEOR',     rarity:'epic',      price:5000, colors:['#ff6600','#ff4400','#cc2200'], glow:'#ff8800', animate:'meteor' },
+  // LEGENDÄR
+  { id:'galaxy',    name:'GALAXIE',    rarity:'legendary', price:10000, colors:['#110033','#220055','#330077'], glow:'#aa00ff', animate:'galaxy' },
+  { id:'scales',    name:'SCHUPPEN',   rarity:'legendary', price:10000, colors:['#006600','#004400','#002200'], glow:'#00ff44', animate:'scales' },
+  { id:'skeleton',  name:'SKELETT',    rarity:'legendary', price:10000, colors:['#cccccc','#aaaaaa','#888888'], glow:'#ffffff', animate:'skeleton' },
+  { id:'nebula',    name:'NEBULA',     rarity:'legendary', price:10000, colors:['#220044','#330066','#440088'], glow:'#9900ff', animate:'nebula' },
+  { id:'croc',      name:'KROKODIL',   rarity:'legendary', price:10000, colors:['#1a4a1a','#2a6a2a','#1a3a1a'], glow:'#44aa44', animate:'croc' },
+  { id:'lightning', name:'BLITZ',      rarity:'legendary', price:10000, colors:['#ffff00','#ffffff','#ffdd00'], glow:'#ffffff', animate:'lightning' },
+  { id:'nature',    name:'NATUR',      rarity:'legendary', price:10000, colors:['#228800','#336600','#114400'], glow:'#44ff00', animate:'nature' },
+];
+const PARTICLE_FX = [
+  { id:'default',  name:'STANDARD', rarity:'free',  price:0,    icon:'✨' },
+  { id:'fire',     name:'FEUER',    rarity:'rare',  price:2000,  icon:'🔥' },
+  { id:'ice',      name:'EIS',      rarity:'rare',  price:2000,  icon:'❄️' },
+  { id:'stars',    name:'STERNE',   rarity:'epic',  price:5000, icon:'⭐' },
+  { id:'rainbow',  name:'RAINBOW',  rarity:'epic',  price:5000, icon:'🌈' },
+  { id:'gold',     name:'GOLD',     rarity:'legendary',price:5000,icon:'💛'},
+];
+const FRUIT_SKINS = [
+  { id:'apple',      name:'APFEL',      rarity:'free',      price:0,    icon:'🍎', draw:'emoji', coins:1 },
+  { id:'pear',       name:'BIRNE',      rarity:'rare',      price:2000,  icon:'🍐', draw:'emoji', coins:2 },
+  { id:'banana',     name:'BANANE',     rarity:'rare',      price:2000,  icon:'🍌', draw:'emoji', coins:2 },
+  { id:'grapes',     name:'TRAUBEN',    rarity:'rare',      price:2000,  icon:'🍇', draw:'emoji', coins:2 },
+  { id:'strawberry', name:'ERDBEERE',   rarity:'epic',      price:5000, icon:'🍓', draw:'emoji', coins:3 },
+  { id:'watermelon', name:'MELONE',     rarity:'epic',      price:5000, icon:'🍉', draw:'emoji', coins:3 },
+  { id:'cherry',     name:'KIRSCHE',    rarity:'epic',      price:5000, icon:'🍒', draw:'emoji', coins:3 },
+  { id:'mango',      name:'MANGO',      rarity:'legendary', price:10000, icon:'🥭', draw:'emoji', coins:5 },
+  { id:'kiwi',       name:'KIWI',       rarity:'legendary', price:10000, icon:'🥝', draw:'emoji', coins:5 },
+  { id:'lucky',      name:'LUCKY',      rarity:'legendary', price:-1,    icon:'🍀', draw:'emoji', coins:10 },
+];
+
+const BG_THEMES = [
+  { id:'default', name:'KLASSISCH', rarity:'free',      price:0,    bg:'#0a0a0f', dots:'#00ff41', dotAlpha:.2  },
+  { id:'space',   name:'SPACE',     rarity:'rare',      price:2000,  bg:'#06061a', dots:'#5599ff', dotAlpha:.4  },
+  { id:'forest',  name:'WALD',      rarity:'rare',      price:2000,  bg:'#041204', dots:'#44ff44', dotAlpha:.4  },
+  { id:'sunset',  name:'SUNSET',    rarity:'epic',      price:5000, bg:'#1a0a06', dots:'#ff7722', dotAlpha:.45 },
+  { id:'ocean',   name:'OZEAN',     rarity:'epic',      price:5000, bg:'#041018', dots:'#00ccff', dotAlpha:.45 },
+  { id:'lila',    name:'GALAXIE',   rarity:'legendary', price:10000, bg:'#0a0318', dots:'#dd55ff', dotAlpha:.5  },
+];
+const RARITY_COLORS = { free:'#aaffaa', rare:'#4488ff', epic:'#cc44ff', legendary:'#ffaa00' };
+const RARITY_LABELS = { free:'GRATIS', rare:'SELTEN', epic:'EPISCH', legendary:'LEGENDÄR' };
+
+/* ══════════════════════════════
+   SAVE / LOAD
+══════════════════════════════ */
+function load(k,def){ try{const v=localStorage.getItem(k); return v!==null?JSON.parse(v):def;}catch{return def;} }
+function save(k,v){ localStorage.setItem(k,JSON.stringify(v)); }
+
+let coins       = load('snakeCoins', 0);
+let owned       = load('snakeOwned', ['classic','fruit-apple']); // owned IDs
+let equippedSkin   = load('snakeEquippedSkin',  'classic');
+let equippedFx     = load('snakeEquippedFx',    'default');
+let equippedFruit  = load('snakeEquippedFruit', 'apple');
+let equippedBg     = load('snakeEquippedBg',    'default');
+
+function saveAll(){
+  save('snakeCoins', coins);
+  save('snakeOwned', owned);
+  save('snakeEquippedSkin',  equippedSkin);
+  save('snakeEquippedFx',    equippedFx);
+  save('snakeEquippedFruit', equippedFruit);
+  save('snakeEquippedBg',    equippedBg);
+}
+
+let prestigeLevel = load('snakePrestige', 0);
+const PRESTIGE_BADGES = ['✦','★','◆','▲','♛','⚡','🔥','👑'];
+function prestigeBadge(n){ return PRESTIGE_BADGES[Math.min(n-1, PRESTIGE_BADGES.length-1)] || '✦'; }
+
+function updateCoinDisplay(){
+  document.getElementById('coin-display').textContent = coins;
+  const el2=document.getElementById('coin-display-2');
+  if(el2) el2.textContent = coins;
+  const lrc=document.getElementById('lr-coins');
+  if(lrc) lrc.textContent = coins;
+}
+
+function showMenuPanel(){
+  document.getElementById('menu-panel').classList.remove('hidden');
+  document.getElementById('hud-panel').classList.add('hidden');
+}
+function showHudPanel(){
+  document.getElementById('menu-panel').classList.add('hidden');
+  document.getElementById('hud-panel').classList.remove('hidden');
+}
+updateCoinDisplay();
+
+/* ══════════════════════════════
+   MODES
+══════════════════════════════ */
+const MODES = {
+  classic:  {name:'CLASSIC',  color:'#00ff41',ghostSelf:false,wrapWalls:false,hardcore:false,maze:false,speedMult:1.0},
+  ghost:    {name:'GHOST',    color:'#cc44ff',ghostSelf:true, wrapWalls:false,hardcore:false,maze:false,speedMult:1.0},
+  tunnel:   {name:'TUNNEL',   color:'#00d4ff',ghostSelf:false,wrapWalls:true, hardcore:false,maze:false,speedMult:1.0},
+  hardcore: {name:'HARDCORE', color:'#ff3333',ghostSelf:false,wrapWalls:false,hardcore:true, maze:false,speedMult:1.4},
+  maze:     {name:'MAZE',     color:'#ffee00',ghostSelf:false,wrapWalls:false,hardcore:false,maze:true, speedMult:1.0},
+};
+let currentMode = 'classic';
+function setTheme(mk){ const m=MODES[mk]; document.documentElement.style.setProperty('--c',m.color); document.getElementById('mode-badge').textContent=m.name; }
+
+/* ══════════════════════════════
+   CANVAS
+══════════════════════════════ */
+const canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
+const CELL=20; let COLS,ROWS;
+function resizeCanvas(){
+  const isLandscape=window.innerWidth>window.innerHeight;
+  document.body.classList.toggle('landscape',isLandscape);
+  document.body.classList.toggle('portrait',!isLandscape);
+  const sidePanel=isLandscape?200:0;
+  const bottomUI=isLandscape?80:200;
+  const maxW=window.innerWidth-sidePanel-32;
+  const maxH=window.innerHeight-bottomUI;
+  const s=Math.floor(Math.min(maxW,maxH,480)/CELL)*CELL;
+  canvas.width=canvas.height=Math.max(160,s);
+  COLS=ROWS=canvas.width/CELL;
+}
+resizeCanvas();
+window.addEventListener('resize',()=>{resizeCanvas();if(state==='idle'||state==='dead')draw();});
+
+/* ══════════════════════════════
+   DOM
+══════════════════════════════ */
+const scoreEl=document.getElementById('score'),levelEl=document.getElementById('level'),
+      fruitsEl=document.getElementById('fruits'),bestEl=document.getElementById('best'),
+      pauseBtn=document.getElementById('pause-btn'),startBtn=document.getElementById('start-btn'),
+      overlay=document.getElementById('overlay'),oTitle=document.getElementById('o-title'),
+      oSub=document.getElementById('o-sub'),oHint=document.getElementById('o-hint'),
+      oScore=document.getElementById('o-score'),sbEl=document.getElementById('scoreboard'),
+      modeGrid=document.getElementById('mode-grid');
+
+/* ══════════════════════════════
+   SCOREBOARD
+══════════════════════════════ */
+let playerName=load('snakeName','');
+function getScores(){return load('snakeScores3',[]);}
+function saveScore(name,sc,lvl,mode){
+  const scores=getScores();
+  scores.push({name:name.toUpperCase().slice(0,8),score:sc,level:lvl,mode});
+  scores.sort((a,b)=>b.score-a.score); scores.splice(8);
+  save('snakeScores3',scores); return scores;
+}
+const modeColors={classic:'#00ff41',ghost:'#cc44ff',tunnel:'#00d4ff',hardcore:'#ff3333',maze:'#ffee00'};
+function renderScoreboard(hiScore){
+  const scores=getScores();
+  if(!scores.length){if(sbEl)sbEl.classList.add('hidden');return;}
+  if(sbEl)sbEl.classList.remove('hidden');
+  const medals=['🥇','🥈','🥉','4.','5.'];
+  if(sbEl)sbEl.innerHTML='<div class="sb-title">◆ TOP 5 ◆</div>'+scores.slice(0,5).map((s,i)=>{
+    const hi=hiScore!==undefined&&s.score===hiScore&&s.name===playerName.toUpperCase();
+    const dot=`<span class="sb-mode-dot" style="background:${modeColors[s.mode]||'#fff'}"></span>`;
+    return `<div class="sb-row${hi?' hi':''}"><span class="sb-rank">${medals[i]}</span>
+    <span class="sb-name">${dot}${s.name}</span>
+    <span class="sb-score" style="color:${modeColors[s.mode]||'#fff'}">${s.score}</span></div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════
+   GAME RULES
+══════════════════════════════ */
+function foodsForLevel(lvl){return 3+lvl*2;}
+function baseSpeed(lvl){return Math.max(80,180-(lvl-1)*5);}
+function speedForLevel(lvl){return Math.round(baseSpeed(lvl)/MODES[currentMode].speedMult);}
+function fruitsToLevel(lvl){
+  return lvl*3;
+}
+
+/* ══════════════════════════════
+   GAME STATE
+══════════════════════════════ */
+let snake,dir,nextDir,foods,walls,particles;
+let score,level,speed,gameLoop,state='naming';
+let fruitsCollected,fruitsNeeded;
+let best=load('snakeBest',0);
+bestEl.textContent=best;
+
+// Bonus fruit & combo
+let bonusFood=null, bonusFoodTimer=null;
+let rebirthCount=0;
+let comboCount=0, comboTimer=null, comboActive=false;
+let lastFruitTime=0;
+
+function init(){
+  const cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2);
+  snake=[{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy}];
+  dir=nextDir={x:1,y:0};
+  score=0;level=1;
+  fruitsCollected=0;fruitsNeeded=fruitsToLevel(level);
+  speed=speedForLevel(1);particles=[];foods=[];walls=[];
+  rebirthCount=0;
+  bonusFood=null;clearTimeout(bonusFoodTimer);
+  comboCount=0;comboActive=false;clearTimeout(comboTimer);
+  const ch=document.getElementById('combo-hud');if(ch)ch.style.display='none';
+  scoreEl.textContent=0;levelEl.textContent=1;fruitsEl.textContent='0/'+fruitsNeeded;
+  document.getElementById('length').textContent=3;
+  if(MODES[currentMode].maze) generateMaze();
+  for(let i=0;i<foodsForLevel(1);i++) placeFood();
+  POWERUPS.forEach(p=>{puActive[p.id]=false;clearTimeout(puTimers[p.id]);});
+  startMusic();
+  updateStreak();
+  state='running';
+  updatePuBtns();
+  overlay.classList.add('hidden');
+  pauseBtn.classList.add('active');
+  pauseBtn.textContent='⏸ PAUSE';
+  startBtn.textContent='▶ NEUSTART';
+  showHudPanel();
+  clearInterval(gameLoop);
+  gameLoop=setInterval(tick,speed);
+}
+
+function generateMaze(){
+  walls=[];
+  addMazeWalls(10);
+}
+
+function addMazeWalls(count){
+  const cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2);
+  let placed=0,tries=0;
+  while(placed<count&&tries<500){
+    tries++;
+    const wx=Math.floor(Math.random()*COLS),wy=Math.floor(Math.random()*ROWS);
+    if(Math.abs(wx-cx)<=3&&Math.abs(wy-cy)<=3) continue;
+    if(walls.some(w=>w.x===wx&&w.y===wy)) continue;
+    if(snake&&snake.some(s=>s.x===wx&&s.y===wy)) continue;
+    if(foods&&foods.some(f=>f.x===wx&&f.y===wy)) continue;
+    walls.push({x:wx,y:wy});placed++;
+  }
+}
+
+function placeFood(){
+  let pos,t=0;
+  do{pos={x:Math.floor(Math.random()*COLS),y:Math.floor(Math.random()*ROWS)};t++;}
+  while(t<400&&(snake.some(s=>s.x===pos.x&&s.y===pos.y)||foods.some(f=>f.x===pos.x&&f.y===pos.y)||walls.some(w=>w.x===pos.x&&w.y===pos.y)));
+  foods.push(pos);
+}
+
+function tick(){
+  try{
+  if(state!=='running')return;
+  dir={...nextDir};
+  let nx=snake[0].x+dir.x,ny=snake[0].y+dir.y;
+  const mode=MODES[currentMode];
+  if(mode.wrapWalls){nx=((nx%COLS)+COLS)%COLS;ny=((ny%ROWS)+ROWS)%ROWS;}
+  else if(nx<0||nx>=COLS||ny<0||ny>=ROWS){die();return;}
+  const head={x:nx,y:ny};
+  if(!mode.ghostSelf&&snake.slice(1).some(s=>s.x===head.x&&s.y===head.y)){die();return;}
+  if(walls.some(w=>w.x===head.x&&w.y===head.y)){die();return;}
+  snake.unshift(head);
+  document.getElementById('length').textContent=snake.length;
+
+  // Check bonus food eaten
+  if(bonusFood&&head.x===bonusFood.x&&head.y===bonusFood.y){
+    const bCoins=bonusFood.coins, bScore=bonusFood.score;
+    score+=bScore; scoreEl.textContent=score;
+    scoreEl.classList.remove('bump');void scoreEl.offsetWidth;scoreEl.classList.add('bump');
+    coins+=bCoins*(comboActive?2:1); updateCoinDisplay(); saveAll();
+    spawnParticles(bonusFood.x*CELL+CELL/2,bonusFood.y*CELL+CELL/2);
+    spawnParticles(bonusFood.x*CELL+CELL/2,bonusFood.y*CELL+CELL/2);
+    showToast(`⭐ BONUS! +${bScore} PTS +${bCoins*(comboActive?2:1)}🪙`,'#ffdd00');
+    playSound('levelup');
+    clearTimeout(bonusFoodTimer);bonusFood=null;
+    snake.pop();
+  }
+
+  const eaten=foods.findIndex(f=>f.x===head.x&&f.y===head.y);
+  if(eaten!==-1){
+    const dscoreMult=puActive&&puActive['dscore']?2:1;
+    score+=level*50*(comboActive?2:1)*dscoreMult;
+    scoreEl.textContent=score;
+    scoreEl.classList.remove('bump');void scoreEl.offsetWidth;scoreEl.classList.add('bump');
+    // Combo system
+    comboCount++;
+    clearTimeout(comboTimer);
+    if(comboCount>=3&&!comboActive){
+      comboActive=true;
+      const _ch=document.getElementById('combo-hud');
+      if(_ch){_ch.style.display='block';}
+      const _ctb=document.getElementById('combo-timer-bar');
+      if(_ctb){_ctb.style.transition='none';_ctb.style.width='100%';requestAnimationFrame(()=>{_ctb.style.transition='width 5s linear';_ctb.style.width='0%';});}
+      showToast('⚡ COMBO! 2x COINS für 5 SEK!','#ffdd00');
+      comboTimer=setTimeout(()=>{
+        comboActive=false;comboCount=0;
+        if(_ch) _ch.style.display='none';
+      },5000);
+    } else if(comboActive){
+      clearTimeout(comboTimer);
+      comboTimer=setTimeout(()=>{
+        comboActive=false;comboCount=0;
+        document.getElementById('combo-hud').style.display='none';
+      },5000);
+    } else {
+      comboTimer=setTimeout(()=>{comboCount=0;},3000);
+    }
+    // Coins
+    const fruitSkinData = getFruitData();
+    const baseCoins = Math.round((fruitSkinData.coins||1) * (1 + prestigeLevel*0.05));
+    const puCoinMult = (puActive&&puActive['coin']) ? 2 : 1;
+    const fruitCoins = Math.round(baseCoins * (comboActive?2:1) * puCoinMult);
+    coins+=fruitCoins; updateCoinDisplay(); saveAll();
+    stats.totalCoinsEarned=(stats.totalCoinsEarned||0)+fruitCoins;
+    spawnParticles(foods[eaten].x*CELL+CELL/2,foods[eaten].y*CELL+CELL/2);
+    playSound('eat');
+    foods.splice(eaten,1);placeFood();
+    fruitsCollected++;fruitsEl.textContent=fruitsCollected+'/'+fruitsNeeded;
+    if(fruitsCollected>=fruitsNeeded){
+      level++;fruitsCollected=0;fruitsNeeded=fruitsToLevel(level);
+      levelEl.textContent=level;
+      levelEl.classList.remove('lvlup');void levelEl.offsetWidth;levelEl.classList.add('lvlup');
+      // flash
+      const fl=document.getElementById('levelup-flash');
+      fl.classList.remove('show');void fl.offsetWidth;fl.classList.add('show');
+      // Show level-up toast with big number
+      showToast('⬆️ LEVEL '+level+'!', MODES[currentMode].color);
+      playSound('levelup'); vibrate([30,20,80]);
+      fruitsEl.textContent='0/'+fruitsNeeded;
+      // Coins: 5 per level
+      coins+=5; updateCoinDisplay(); saveAll();
+      const target=foodsForLevel(level);
+      while(foods.length<target) placeFood();
+      if(MODES[currentMode].maze) addMazeWalls(3);
+      speed=speedForLevel(level);
+      clearInterval(gameLoop);gameLoop=setInterval(tick,speed);
+      // Spawn bonus fruit on level-up
+      spawnBonusFood();
+    }
+  } else { snake.pop(); }
+  draw();
+  }catch(e){console.error('tick error:',e);clearInterval(gameLoop);state='dead';document.getElementById('menu-btn').style.display='';startBtn.textContent='🔄 NEUSTART';overlay.classList.remove('hidden');}
+}
+
+function spawnBonusFood(){
+  if(bonusFood) return;
+  if(Math.random()>0.6) return; // 60% chance
+  let pos,t=0;
+  do{pos={x:Math.floor(Math.random()*COLS),y:Math.floor(Math.random()*ROWS)};t++;}
+  while(t<400&&(snake.some(s=>s.x===pos.x&&s.y===pos.y)||foods.some(f=>f.x===pos.x&&f.y===pos.y)||walls.some(w=>w.x===pos.x&&w.y===pos.y)));
+  const BONUS_TYPES=[
+    {icon:'⭐',coins:5,score:level*200,color:'#ffdd00'},
+    {icon:'💎',coins:8,score:level*300,color:'#88eeff'},
+    {icon:'🌟',coins:10,score:level*500,color:'#ffffff'},
+  ];
+  const type=BONUS_TYPES[Math.floor(Math.random()*BONUS_TYPES.length)];
+  bonusFood={...pos,...type};
+  clearTimeout(bonusFoodTimer);
+  bonusFoodTimer=setTimeout(()=>{bonusFood=null;},10000);
+}
+
+/* ══════════════════════════════
+   PARTICLES
+══════════════════════════════ */
+function fxColors(){
+  return [MODES[currentMode].color,'#ffee00','#00d4ff','#ff006e'];
+}
+function spawnParticles(x,y){
+  const colors=fxColors();
+  for(let i=0;i<14;i++){
+    const a=(Math.PI*2*i)/14+Math.random()*.4;
+    particles.push({x,y,vx:Math.cos(a)*(2+Math.random()*3),vy:Math.sin(a)*(2+Math.random()*3),life:1,
+      color:colors[Math.floor(Math.random()*colors.length)]});
+  }
+}
+
+/* ══════════════════════════════
+   DIE / REVIVE
+══════════════════════════════ */
+function die(){
+  clearInterval(gameLoop);state='dead';
+  stopMusic();
+  playSound('die'); vibrate([80,40,80,40,200]);
+  const isNewBest=score>best;
+  // Update stats
+  stats.totalFruits=(stats.totalFruits||0)+fruitsCollected;
+  stats.maxLevel=Math.max(stats.maxLevel||0,level);
+  stats.maxScore=Math.max(stats.maxScore||0,score);
+  stats.maxLength=Math.max(stats.maxLength||0,snake.length);
+  stats.totalGames=(stats.totalGames||0)+1;
+  if(!modesSet.includes(currentMode)){modesSet.push(currentMode);save('snakeModesSet',modesSet);}
+  stats.modesPlayed=modesSet.length;
+  if(level>=10) stats.noReviveL10=1;
+  save('snakeStats2',stats);
+  // Check achievements
+  checkAchievements();
+  // Achievement progress update is handled by checkAchievements
+  // Update daily challenges
+  updateChallengeProgress({fruits:fruitsCollected,level,score,length:snake.length,mode:currentMode,revives:0});
+  // Update HUD stats
+  updateStatDisplay();
+  if(isNewBest){
+    const bonus=50;
+    best=score;save('snakeBest',best);bestEl.textContent=best;
+    coins+=bonus;updateCoinDisplay();saveAll();
+  }
+  // Coins for level
+  // (already given per level during play)
+  saveScore(playerName,score,level,currentMode);
+
+  const mode=MODES[currentMode];
+  oTitle.textContent='GAME OVER';
+  oTitle.style.color=mode.color;oTitle.style.textShadow=`0 0 10px ${mode.color},0 0 28px ${mode.color}`;
+  oSub.textContent=isNewBest?'🏆 NEUER HIGHSCORE! +50🪙':'';oSub.classList.remove('hidden');
+  oScore.textContent='SCORE: '+score+'  •  LEVEL: '+level;
+  oScore.classList.remove('hidden');oScore.style.color=mode.color;oScore.style.textShadow=`0 0 8px ${mode.color}`;
+  oHint.textContent='';
+  modeGrid.classList.add('hidden');
+  if(sbEl)sbEl.classList.add('hidden');
+  startBtn.textContent='🔄 NEUSTART';
+  document.getElementById('menu-btn').style.display='';
+  const rebirthCost=1500+(rebirthCount*500);
+  const rebirthBtn=document.getElementById('rebirth-btn');
+  if(coins>=rebirthCost){
+    rebirthBtn.textContent='💫 REBIRTH ('+rebirthCost+'🪙)';
+    rebirthBtn.style.display='';
+  } else {
+    rebirthBtn.style.display='none';
+  }
+  pauseBtn.classList.remove('active');
+
+  renderScoreboard(score);
+  overlay.classList.remove('hidden');
+
+  // flash
+  ctx.fillStyle='rgba(255,50,50,.12)';ctx.fillRect(0,0,canvas.width,canvas.height);
+  snake.forEach((s,i)=>{ctx.fillStyle=`rgba(255,60,60,${.5+i/snake.length*.3})`;ctx.fillRect(s.x*CELL+1,s.y*CELL+1,CELL-2,CELL-2);});
+}
+
+/* ══════════════════════════════
+   DRAW
+══════════════════════════════ */
+function getSkinData(){ return SKINS.find(s=>s.id===equippedSkin)||SKINS[0]; }
+function getFruitData(){ return FRUIT_SKINS.find(f=>f.id===equippedFruit)||FRUIT_SKINS[0]; }
+
+function draw(){
+  const skin=getSkinData(), fruit=getFruitData();
+  const modeCol=MODES[currentMode].color;
+  const bgTheme=BG_THEMES.find(b=>b.id===equippedBg)||BG_THEMES[0];
+  ctx.fillStyle=bgTheme.bg;ctx.fillRect(0,0,canvas.width,canvas.height);
+  // Draw bg dots in game canvas
+  if(equippedBg!=='default'){
+    const _t=Date.now()/1000;
+    for(let _i=0;_i<50;_i++){
+      const _x=((_i*137+Math.sin(_t*.2+_i)*.5+1)*canvas.width/2)%canvas.width;
+      const _y=((_i*97+Math.cos(_t*.15+_i)*.5+1)*canvas.height/2)%canvas.height;
+      const _a=bgTheme.dotAlpha*(0.5+0.5*Math.sin(_t+_i*.7));
+      ctx.save();ctx.globalAlpha=_a;ctx.fillStyle=bgTheme.dots;
+      const _ds=bgTheme.dotSize||2;
+      ctx.fillRect(_x,_y,_ds,_ds);ctx.restore();
+    }
+  }
+  // grid
+  ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=.5;
+  for(let x=0;x<=COLS;x++){ctx.beginPath();ctx.moveTo(x*CELL,0);ctx.lineTo(x*CELL,canvas.height);ctx.stroke();}
+  for(let y=0;y<=ROWS;y++){ctx.beginPath();ctx.moveTo(0,y*CELL);ctx.lineTo(canvas.width,y*CELL);ctx.stroke();}
+  // walls
+  walls.forEach(w=>{ctx.save();ctx.fillStyle='rgba(255,238,0,.18)';ctx.shadowColor='#ffee00';ctx.shadowBlur=6;ctx.fillRect(w.x*CELL+1,w.y*CELL+1,CELL-2,CELL-2);ctx.restore();});
+  // particles
+  particles=particles.filter(p=>p.life>0);
+  particles.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.vx*=.84;p.vy*=.84;p.life-=.06;
+    ctx.save();ctx.globalAlpha=p.life;ctx.fillStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=8;
+    ctx.fillRect(p.x-2,p.y-2,4,4);ctx.restore();
+  });
+  // foods
+  const now=Date.now();
+  foods.forEach((food,idx)=>{
+    const pulse=.7+.3*Math.sin(now/200+idx*1.2);
+    const fx=food.x*CELL+CELL/2,fy=food.y*CELL+CELL/2,r=(CELL/2-2)*pulse;
+    ctx.save();
+    if(fruit.draw==='emoji'){
+      ctx.font=`${Math.round(r*1.8)}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.globalAlpha=pulse;ctx.fillText(fruit.icon,fx,fy);
+    } else {
+      ctx.shadowColor='#ff006e';ctx.shadowBlur=18*pulse;
+      ctx.fillStyle='#ff006e';ctx.beginPath();ctx.arc(fx,fy,r,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.7)';ctx.beginPath();ctx.arc(fx-r*.3,fy-r*.3,r*.25,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
+  });
+  // Bonus food
+  if(bonusFood){
+    const pulse=.6+.4*Math.sin(now/150);
+    const bx2=bonusFood.x*CELL+CELL/2,by2=bonusFood.y*CELL+CELL/2;
+    const br=(CELL/2-1)*pulse;
+    ctx.save();
+    // Glow
+    ctx.shadowColor=bonusFood.color;ctx.shadowBlur=20*pulse;
+    ctx.globalAlpha=pulse;
+    ctx.font=`${Math.round(br*2)}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(bonusFood.icon,bx2,by2);
+    // Timer ring
+    ctx.globalAlpha=.4*pulse;ctx.strokeStyle=bonusFood.color;ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(bx2,by2,CELL/2+2,0,Math.PI*2);ctx.stroke();
+    ctx.restore();
+  }
+  // snake
+  const mode=MODES[currentMode];
+  snake.forEach((seg,i)=>{
+    const isHead=i===0,t=i/snake.length;
+    ctx.save();
+    const colIdx=Math.min(i,skin.colors.length-1);
+    const segCol=skin.colors[Math.min(Math.floor(t*(skin.colors.length)),skin.colors.length-1)];
+    ctx.shadowColor=skin.glow;ctx.shadowBlur=isHead?16:6;
+    const alpha=mode.ghostSelf?(isHead?1:.45*(1-t*.5)):(1-t*.3);
+    ctx.globalAlpha=alpha;
+
+    // Special skin animations
+    if(skin.animate==='fire'&&!isHead){
+      const flicker=.8+.2*Math.sin(now/80+i*.7);
+      ctx.shadowBlur=10*flicker;
+    }
+    if(skin.animate==='crystal'){ ctx.shadowBlur=isHead?20:12; }
+    if(skin.animate==='ocean'){
+      const wave=Math.sin(now/200+i*.3);
+      ctx.fillStyle=`rgb(0,${Math.floor(120+wave*40)},${Math.floor(180+wave*40)})`;
+      ctx.shadowColor='#00bbff';ctx.shadowBlur=isHead?16:6;
+    }
+    if(skin.animate==='clover'){
+      const g=Math.floor(180+Math.sin(now/150+i*.5)*50);
+      ctx.fillStyle=`rgb(0,${g},${Math.floor(g*.4)})`;
+    }
+    if(skin.animate==='crystal2'){
+      const hue=260+Math.sin(now/300+i*.4)*30;
+      ctx.fillStyle=`hsl(${hue},80%,${50+Math.sin(now/200+i)*15}%)`;
+      ctx.shadowColor='#aa66ff';ctx.shadowBlur=isHead?20:10;
+    }
+    if(skin.animate==='meteor'){
+      ctx.fillStyle=i===0?'#ffaa00':`hsl(${20-i*2},100%,${Math.max(20,50-i*3)}%)`;
+      ctx.shadowColor='#ff6600';ctx.shadowBlur=isHead?18:Math.max(2,12-i);
+    }
+    if(skin.animate==='nebula'){
+      const hue=(280+Math.sin(now/400+i*.5)*40)%360;
+      ctx.fillStyle=`hsl(${hue},70%,${25+Math.sin(now/250+i)*10}%)`;
+      ctx.shadowColor='#9900ff';ctx.shadowBlur=isHead?22:8;
+      // Star sparkles
+      if(Math.random()<0.05){
+        ctx.save();ctx.globalAlpha=0.8;ctx.fillStyle='#ffffff';
+        ctx.beginPath();ctx.arc(seg.x*CELL+Math.random()*CELL,seg.y*CELL+Math.random()*CELL,1,0,Math.PI*2);ctx.fill();
+        ctx.restore();
+      }
+    }
+    if(skin.animate==='croc'){
+      ctx.fillStyle=segCol;
+      // Scale pattern
+      ctx.save();
+      ctx.globalAlpha=alpha*0.4;ctx.strokeStyle='#44aa44';ctx.lineWidth=0.8;
+      ctx.beginPath();ctx.rect(seg.x*CELL+2,seg.y*CELL+2,CELL-4,CELL/2-2);ctx.stroke();
+      ctx.beginPath();ctx.rect(seg.x*CELL+2,seg.y*CELL+CELL/2,CELL-4,CELL/2-2);ctx.stroke();
+      ctx.restore();
+    }
+    if(skin.animate==='lightning'){
+      const flicker=Math.random()>.7?1:(.7+Math.sin(now/30+i)*.3);
+      ctx.fillStyle=flicker>0.9?'#ffffff':'#ffff00';
+      ctx.shadowColor='#ffffff';ctx.shadowBlur=(isHead?20:10)*flicker;
+    }
+    if(skin.animate==='spin_exclusive'){
+      const hue=(now/8+i*20)%360;
+      ctx.fillStyle=`hsl(${hue},100%,55%)`;
+      ctx.shadowColor=`hsl(${hue},100%,70%)`;
+      ctx.shadowBlur=isHead?24:12;
+      // Extra sparkle on head
+      if(isHead){
+        ctx.save();
+        for(let sp=0;sp<4;sp++){
+          const sa=(now/200+sp*Math.PI/2);
+          const sx2=seg.x*CELL+CELL/2+Math.cos(sa)*CELL*0.7;
+          const sy2=seg.y*CELL+CELL/2+Math.sin(sa)*CELL*0.7;
+          ctx.globalAlpha=0.7*Math.abs(Math.sin(now/300+sp));
+          ctx.fillStyle=`hsl(${(hue+sp*90)%360},100%,70%)`;
+          ctx.beginPath();ctx.arc(sx2,sy2,2,0,Math.PI*2);ctx.fill();
+        }
+        ctx.restore();
+      }
+    }
+    if(skin.animate==='rainbow'){
+      const hue=(now/20+i*15)%360;
+      ctx.fillStyle=`hsl(${hue},100%,55%)`;
+      ctx.shadowColor=`hsl(${hue},100%,70%)`;
+      ctx.shadowBlur=isHead?18:8;
+    } else if(skin.animate==='electric'){
+      const flicker=Math.sin(now/40+i*2)>.7?1.4:.9;
+      ctx.shadowBlur=(isHead?18:8)*flicker;
+      if(flicker>1.2) ctx.fillStyle='#ffffff';
+    } else if(skin.animate==='water'){
+      const wave=Math.sin(now/300+i*.4);
+      ctx.fillStyle=`rgb(0,${Math.floor(80+wave*40)},${Math.floor(136+wave*60)})`;
+    } else if(skin.animate==='plasma'){
+      ctx.fillStyle=`hsl(${280+Math.sin(now/200+i)*40},100%,${50+Math.sin(now/100+i*.5)*15}%)`;
+      ctx.shadowBlur=isHead?20:10;
+    }
+
+    ctx.fillStyle=segCol;
+    const pad=isHead?1:2;
+    rr(ctx,seg.x*CELL+pad,seg.y*CELL+pad,CELL-pad*2,CELL-pad*2,isHead?4:3);
+    ctx.fill();
+
+    // Gold shimmer overlay
+    if(skin.animate==='gold'){
+      const shimmer=.3+.2*Math.sin(now/120+i*.5);
+      ctx.globalAlpha=alpha*shimmer;ctx.fillStyle='#ffffff';
+      rr(ctx,seg.x*CELL+pad,seg.y*CELL+pad,CELL-pad*2,CELL-pad*2,isHead?4:3);
+      ctx.fill();
+    }
+    // Shadow outer glow
+    if(skin.outerGlow){
+      ctx.save();
+      ctx.globalAlpha=alpha*0.6;
+      ctx.shadowColor='#8800ff';ctx.shadowBlur=20;
+      ctx.strokeStyle='#8800ff';ctx.lineWidth=2;
+      rr(ctx,seg.x*CELL+pad-1,seg.y*CELL+pad-1,CELL-pad*2+2,CELL-pad*2+2,isHead?5:4);
+      ctx.stroke();
+      ctx.restore();
+    }
+    // Shadow dark overlay
+    if(skin.animate==='shadow'){
+      ctx.globalAlpha=alpha*.4;ctx.fillStyle='#000000';
+      rr(ctx,seg.x*CELL+pad,seg.y*CELL+pad,CELL-pad*2,CELL-pad*2,isHead?4:3);
+      ctx.fill();
+    }
+    // SCHUPPEN
+    if(skin.animate==='scales'&&!isHead){
+      const sx=seg.x*CELL,sy=seg.y*CELL,c=CELL;
+      ctx.globalAlpha=alpha*.9;ctx.fillStyle='#003300';
+      ctx.beginPath();ctx.arc(sx+c*.5,sy+c*.4,c*.42,Math.PI,0);ctx.fill();
+      ctx.globalAlpha=alpha;ctx.fillStyle='#00cc44';
+      ctx.beginPath();ctx.arc(sx+c*.5,sy+c*.35,c*.38,Math.PI,0);ctx.fill();
+      ctx.globalAlpha=alpha*.5;ctx.fillStyle='#88ffaa';
+      ctx.beginPath();ctx.arc(sx+c*.5,sy+c*.28,c*.22,Math.PI,0);ctx.fill();
+      ctx.globalAlpha=alpha*.8;ctx.fillStyle='#009933';
+      ctx.beginPath();ctx.arc(sx+c*.28,sy+c*.75,c*.25,Math.PI,0);ctx.fill();
+      ctx.beginPath();ctx.arc(sx+c*.72,sy+c*.75,c*.25,Math.PI,0);ctx.fill();
+    }
+    // SKELETT
+    if(skin.animate==='skeleton'&&!isHead){
+      const sx=seg.x*CELL,sy=seg.y*CELL,c=CELL;
+      ctx.globalAlpha=alpha;ctx.fillStyle='#dddddd';
+      ctx.fillRect(sx+c*.3,sy+c*.25,c*.4,c*.5);
+      ctx.fillStyle='#ffffff';
+      ctx.beginPath();ctx.arc(sx+c*.5,sy+c*.22,c*.22,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(sx+c*.5,sy+c*.78,c*.22,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=alpha*.6;ctx.fillStyle='#aaaaaa';
+      ctx.beginPath();ctx.arc(sx+c*.5,sy+c*.22,c*.12,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(sx+c*.5,sy+c*.78,c*.12,0,Math.PI*2);ctx.fill();
+    }
+    // GALAXIE
+    if(skin.animate==='galaxy'){
+      const sx=seg.x*CELL,sy=seg.y*CELL,c=CELL;
+      const nebHue=(now/30+i*25)%360;
+      ctx.globalAlpha=alpha*.5;ctx.fillStyle=`hsla(${nebHue},80%,50%,.4)`;
+      ctx.beginPath();ctx.arc(sx+c*.4,sy+c*.4,c*.35,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle=`hsla(${(nebHue+60)%360},80%,60%,.3)`;
+      ctx.beginPath();ctx.arc(sx+c*.6,sy+c*.6,c*.3,0,Math.PI*2);ctx.fill();
+      [[.2,.2],[.7,.15],[.15,.7],[.75,.65],[.5,.45],[.85,.4],[.3,.8]].forEach(([px,py],si)=>{
+        ctx.globalAlpha=alpha*(.5+.5*Math.sin(now/200+i+si*1.3));
+        ctx.fillStyle='#ffffff';
+        ctx.beginPath();ctx.arc(sx+c*px,sy+c*py,si%3===0?1.5:1,0,Math.PI*2);ctx.fill();
+      });
+    }
+    // NATUR
+    if(skin.animate==='nature'&&!isHead){
+      const sx=seg.x*CELL,sy=seg.y*CELL,c=CELL;
+      const sway=Math.sin(now/500+i*.4)*.02;
+      ctx.globalAlpha=alpha*.7;ctx.fillStyle='rgba(80,200,20,.4)';
+      ctx.beginPath();
+      ctx.moveTo(sx+c*.5,sy+c*.05);
+      ctx.bezierCurveTo(sx+c*(.85+sway),sy+c*.2,sx+c*(.9+sway),sy+c*.7,sx+c*.5,sy+c*.95);
+      ctx.bezierCurveTo(sx+c*(.1-sway),sy+c*.7,sx+c*(.15-sway),sy+c*.2,sx+c*.5,sy+c*.05);
+      ctx.fill();
+      ctx.globalAlpha=alpha*.8;ctx.strokeStyle='rgba(150,255,50,.7)';ctx.lineWidth=1.2;
+      ctx.beginPath();ctx.moveTo(sx+c*.5,sy+c*.08);ctx.lineTo(sx+c*.5,sy+c*.92);ctx.stroke();
+      ctx.lineWidth=.6;ctx.strokeStyle='rgba(120,220,40,.5)';
+      [[.35,.3],[.65,.3],[.3,.5],[.7,.5],[.35,.7],[.65,.7]].forEach(([tx,ty])=>{
+        ctx.beginPath();ctx.moveTo(sx+c*.5,sy+c*ty);ctx.lineTo(sx+c*tx,sy+c*(ty-.1));ctx.stroke();
+      });
+    }
+
+    if(isHead){
+      ctx.globalAlpha=1;ctx.fillStyle='rgba(0,0,0,.8)';
+      const cx=seg.x*CELL+CELL/2,cy=seg.y*CELL+CELL/2;
+      let e1x,e1y,e2x,e2y;
+      if(dir.x===1){e1x=cx+3;e1y=cy-3;e2x=cx+3;e2y=cy+3;}
+      else if(dir.x===-1){e1x=cx-3;e1y=cy-3;e2x=cx-3;e2y=cy+3;}
+      else if(dir.y===-1){e1x=cx-3;e1y=cy-3;e2x=cx+3;e2y=cy-3;}
+      else{e1x=cx-3;e1y=cy+3;e2x=cx+3;e2y=cy+3;}
+      ctx.beginPath();ctx.arc(e1x,e1y,1.5,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(e2x,e2y,1.5,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
+  });
+}
+
+function rr(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+}
+
+function animLoop(){
+  if(state==='running'){try{draw();}catch(e){console.error('draw error:',e);}}
+  requestAnimationFrame(animLoop);
+}
+animLoop();
+
+/* ══════════════════════════════
+   LOCKER ROOM UI
+══════════════════════════════ */
+function buildSkinPreview(skin,canvas){
+  const ctx2=canvas.getContext('2d');
+  ctx2.fillStyle='#0a0a0f';ctx2.fillRect(0,0,60,60);
+  const segs=[{x:2,y:1},{x:1,y:1},{x:0,y:1},{x:0,y:0}];
+  segs.forEach((s,i)=>{
+    const t=i/segs.length;
+    const col=skin.colors[Math.min(Math.floor(t*skin.colors.length),skin.colors.length-1)];
+    ctx2.fillStyle=col;ctx2.shadowColor=skin.glow;ctx2.shadowBlur=6;
+    ctx2.beginPath();ctx2.roundRect(s.x*15+1,s.y*15+1,13,13,3);ctx2.fill();
+  });
+}
+
+function renderSkinGrid(){
+  const grid=document.getElementById('skin-grid');
+  grid.innerHTML='';
+  SKINS.filter(s=>s.price>=0).forEach(skin=>{
+    const isOwned=owned.includes(skin.id)||skin.price===0;
+    const isEquipped=equippedSkin===skin.id;
+    const col=RARITY_COLORS[skin.rarity];
+    const card=document.createElement('div');
+    card.className='skin-card'+(isEquipped?' equipped':'')+((!isOwned)?' locked':'');
+    card.style.borderColor=col;card.style.color=col;
+    const cv=document.createElement('canvas');cv.width=60;cv.height=60;cv.className='skin-preview';
+    buildSkinPreview(skin,cv);
+    const rarityLabel=`<span class="skin-rarity rarity-${skin.rarity}">${RARITY_LABELS[skin.rarity]}</span>`;
+    const badge=isEquipped?'<span class="skin-badge">✓</span>':(!isOwned?'<span class="skin-badge">🔒</span>':'');
+    let btnHTML='';
+    if(isEquipped) btnHTML=`<button class="buy-btn equipped-btn" disabled>AUSGERÜSTET</button>`;
+    else if(isOwned) btnHTML=`<button class="buy-btn equip-btn">AUSRÜSTEN</button>`;
+    else btnHTML=`<button class="buy-btn" ${coins<skin.price?'disabled':''}>KAUFEN ${skin.price}🪙</button>`;
+    card.innerHTML=`${badge}<div class="skin-name">${skin.name}</div>${rarityLabel}<div class="skin-price">${skin.price===0?'GRATIS':skin.price+'🪙'}</div>${btnHTML}`;
+    card.insertBefore(cv,card.firstChild);
+    const btn=card.querySelector('button');
+    if(btn&&!btn.disabled){
+      btn.addEventListener('click',e=>{
+        e.stopPropagation();
+        if(!isOwned){
+          if(coins<skin.price)return;
+          coins-=skin.price;owned.push(skin.id);updateCoinDisplay();
+        }
+        equippedSkin=skin.id;saveAll();renderSkinGrid();
+      });
+    }
+    grid.appendChild(card);
+  });
+}
+
+function renderFxGrid(){
+  const grid=document.getElementById('fx-grid');
+  grid.innerHTML='';
+  PARTICLE_FX.forEach(fx=>{
+    const isOwned=owned.includes('fx-'+fx.id)||fx.price===0;
+    const isEquipped=equippedFx===fx.id;
+    const col=RARITY_COLORS[fx.rarity];
+    const card=document.createElement('div');
+    card.className='fx-card'+(isEquipped?' equipped':'')+((!isOwned)?' locked':'');
+    card.style.borderColor=col;card.style.color=col;
+    const rarityLabel=`<span class="skin-rarity rarity-${fx.rarity}">${RARITY_LABELS[fx.rarity]}</span>`;
+    const badge=isEquipped?'<span class="skin-badge">✓</span>':(!isOwned?'<span class="skin-badge">🔒</span>':'');
+    let btnHTML='';
+    if(isEquipped) btnHTML=`<button class="buy-btn equipped-btn" disabled>AKTIV</button>`;
+    else if(isOwned) btnHTML=`<button class="buy-btn equip-btn">AUSRÜSTEN</button>`;
+    else btnHTML=`<button class="buy-btn" ${coins<fx.price?'disabled':''}>KAUFEN ${fx.price}🪙</button>`;
+    card.innerHTML=`${badge}<div class="fx-preview">${fx.icon}</div><div class="fx-name">${fx.name}</div>${rarityLabel}<div class="skin-price">${fx.price===0?'GRATIS':fx.price+'🪙'}</div>${btnHTML}`;
+    const btn=card.querySelector('button');
+    if(btn&&!btn.disabled){
+      btn.addEventListener('click',e=>{
+        e.stopPropagation();
+        if(!isOwned){if(coins<fx.price)return;coins-=fx.price;owned.push('fx-'+fx.id);updateCoinDisplay();}
+        equippedFx=fx.id;saveAll();renderFxGrid();
+      });
+    }
+    grid.appendChild(card);
+  });
+}
+
+function renderFruitGrid(){
+  const grid=document.getElementById('fruit-grid');
+  grid.innerHTML='';
+  FRUIT_SKINS.filter(f=>f.price>=0).forEach(fr=>{
+    const isOwned=owned.includes('fruit-'+fr.id)||fr.price===0;
+    const isEquipped=equippedFruit===fr.id;
+    const col=RARITY_COLORS[fr.rarity];
+    const card=document.createElement('div');
+    card.className='fruit-card'+(isEquipped?' equipped':'')+((!isOwned)?' locked':'');
+    card.style.borderColor=col;card.style.color=col;
+    const rarityLabel=`<span class="skin-rarity rarity-${fr.rarity}" style="font-size:4px">${RARITY_LABELS[fr.rarity]}</span>`;
+    const badge=isEquipped?'<span class="skin-badge">✓</span>':(!isOwned?'<span class="skin-badge">🔒</span>':'');
+    let btnHTML='';
+    if(isEquipped) btnHTML=`<button class="buy-btn equipped-btn" style="font-size:4px" disabled>AKTIV</button>`;
+    else if(isOwned) btnHTML=`<button class="buy-btn equip-btn" style="font-size:4px">RÜSTE AUS</button>`;
+    else btnHTML=`<button class="buy-btn" style="font-size:4px" ${coins<fr.price?'disabled':''}>KAUFEN</button>`;
+    card.innerHTML=`${badge}<div class="fruit-preview">${fr.icon}</div><div class="fruit-name">${fr.name}</div>${rarityLabel}<div class="skin-price" style="font-size:5px">${fr.price===0?'GRATIS':fr.price+'🪙'}</div><div style="font-size:5px;color:#ffaa00">+${fr.coins}🪙/FRUCHT</div>${btnHTML}`;
+    const btn=card.querySelector('button');
+    if(btn&&!btn.disabled){
+      btn.addEventListener('click',e=>{
+        e.stopPropagation();
+        if(!isOwned){if(coins<fr.price)return;coins-=fr.price;owned.push('fruit-'+fr.id);updateCoinDisplay();}
+        equippedFruit=fr.id;saveAll();renderFruitGrid();
+      });
+    }
+    grid.appendChild(card);
+  });
+}
+
+
+/* ══════════════════════════════
+   INVENTAR
+══════════════════════════════ */
+function renderInventory(){
+  const list=document.getElementById('inventory-list');
+  if(!list) return;
+  list.innerHTML='';
+
+  function makeSection(title, items, equipFn, isEquipped){
+    if(!items.length) return;
+    const h=document.createElement('div');
+    h.style.cssText='font-size:clamp(6px,1.2vw,8px);color:rgba(255,255,255,.5);letter-spacing:.15em;margin:10px 0 6px;width:100%;';
+    h.textContent=title;
+    list.appendChild(h);
+    const grid=document.createElement('div');
+    grid.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:6px;width:100%;';
+    items.forEach(item=>{
+      const equipped=isEquipped(item);
+      const card=document.createElement('div');
+      const col=RARITY_COLORS[item.rarity]||'#fff';
+      card.style.cssText=`border:2px solid ${col};padding:8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;background:${equipped?'rgba(255,255,255,.08)':'rgba(255,255,255,.02)'};`;
+      if(equipped) card.style.boxShadow=`0 0 10px ${col}`;
+      const icon=item.icon||'';
+      const preview=item.colors?`<canvas width="40" height="40" style="border-radius:3px;"></canvas>`:`<div style="font-size:22px;">${icon}</div>`;
+      const _eb=equipped?'<div style="font-size:clamp(4px,.8vw,5px);color:#00ff41;">✓ AKTIV</div>':'<button class="inv-equip-btn" style="padding:3px 8px;font-size:clamp(4px,.8vw,5px);background:transparent;border:1px solid '+col+';color:'+col+';cursor:pointer;">AUSRÜSTEN</button>';
+      card.innerHTML=preview+'<div style="font-size:clamp(5px,1vw,6px);color:'+col+';letter-spacing:.05em;text-align:center;">'+item.name+'</div>'+_eb;
+      // Draw skin preview
+      if(item.colors){
+        const cv=card.querySelector('canvas');
+        if(cv) buildSkinPreview(item,cv);
+      }
+      if(!equipped){
+        card.querySelector('button').addEventListener('click',e=>{
+          e.stopPropagation();
+          equipFn(item);
+          renderInventory();
+        });
+      }
+      grid.appendChild(card);
+    });
+    list.appendChild(grid);
+  }
+
+  // Owned skins - classic free, others must be in owned array
+  const ownedSkins=SKINS.filter(s=>s.price===0||owned.includes(s.id));
+  makeSection('🎨 SKINS', ownedSkins,
+    s=>{equippedSkin=s.id;saveAll();renderSkinGrid();},
+    s=>equippedSkin===s.id
+  );
+
+  // Owned fruits - apple free, others must be in owned array
+  const ownedFruits=FRUIT_SKINS.filter(f=>f.price===0||owned.includes('fruit-'+f.id));
+  makeSection('🍎 FRÜCHTE', ownedFruits,
+    f=>{equippedFruit=f.id;saveAll();renderFruitGrid();},
+    f=>equippedFruit===f.id
+  );
+
+  // Owned backgrounds - default free, others must be in owned array
+  const ownedBgs=BG_THEMES.filter(b=>b.price===0||owned.includes('bg-'+b.id));
+  makeSection('🌌 HINTERGRÜNDE', ownedBgs,
+    b=>{equippedBg=b.id;saveAll();renderBgGrid();},
+    b=>equippedBg===b.id
+  );
+}
+
+function renderBgGrid(){
+  const grid=document.getElementById('bg-grid');
+  if(!grid) return;
+  grid.innerHTML='';
+  BG_THEMES.forEach(bg=>{
+    const isOwned=owned.includes('bg-'+bg.id)||bg.price===0;
+    const isEquipped=equippedBg===bg.id;
+    const col=RARITY_COLORS[bg.rarity];
+    const card=document.createElement('div');
+    card.className='skin-card'+(isEquipped?' equipped':'')+((!isOwned)?' locked':'');
+    card.style.borderColor=col; card.style.color=col;
+    const cv=document.createElement('canvas'); cv.width=60; cv.height=60; cv.className='skin-preview';
+    const cx2=cv.getContext('2d');
+    cx2.fillStyle=bg.bg; cx2.fillRect(0,0,60,60);
+    for(let i=0;i<15;i++){cx2.globalAlpha=Math.random()*.6+.2;cx2.fillStyle=bg.dots;cx2.fillRect(Math.random()*58,Math.random()*58,2,2);}
+    cx2.globalAlpha=1;
+    const rarityLabel='<span class="skin-rarity rarity-'+bg.rarity+'">'+RARITY_LABELS[bg.rarity]+'</span>';
+    const badge=isEquipped?'<span class="skin-badge">✓</span>':(!isOwned?'<span class="skin-badge">🔒</span>':'');
+    let btnHTML='';
+    if(isEquipped) btnHTML='<button class="buy-btn equipped-btn" disabled>AKTIV</button>';
+    else if(isOwned) btnHTML='<button class="buy-btn equip-btn">AUSRÜSTEN</button>';
+    else btnHTML='<button class="buy-btn" '+(coins<bg.price?'disabled':'')+'>KAUFEN '+bg.price+'🪙</button>';
+    card.innerHTML=badge+'<div class="skin-name">'+bg.name+'</div>'+rarityLabel+'<div class="skin-price">'+(bg.price===0?'GRATIS':bg.price+'🪙')+'</div>'+btnHTML;
+    card.insertBefore(cv,card.firstChild);
+    const btn=card.querySelector('button');
+    if(btn&&!btn.disabled){
+      btn.addEventListener('click',function(e){
+        e.stopPropagation();
+        if(!isOwned){if(coins<bg.price)return;coins-=bg.price;owned.push('bg-'+bg.id);updateCoinDisplay();}
+        equippedBg=bg.id; saveAll(); renderBgGrid();
+      });
+    }
+    grid.appendChild(card);
+  });
+}
+
+function openScreen(id){
+  ['locker-room','challenges-screen','achievements-screen','prestige-screen','stats-screen','leaderboard-screen','settings-screen','spin-screen','inventory-screen'].forEach(s=>document.getElementById(s).classList.add('hidden'));
+  document.querySelectorAll('.nav-btn-big').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.remove('hidden');
+}
+document.getElementById('inventory-btn').addEventListener('click',()=>{
+  openScreen('inventory-screen');
+  document.getElementById('inventory-btn').classList.add('active');
+  document.getElementById('inv-coins').textContent=coins;
+  renderInventory();
+});
+document.getElementById('inv-close').addEventListener('click',()=>{
+  document.getElementById('inventory-screen').classList.add('hidden');
+  document.getElementById('inventory-btn').classList.remove('active');
+});
+document.getElementById('locker-btn').addEventListener('click',()=>{
+  openScreen('locker-room');
+  document.getElementById('locker-btn').classList.add('active');
+  renderSkinGrid();renderFruitGrid();renderBgGrid();renderPowerupGrid();
+  document.getElementById('lr-coins').textContent=coins;
+});
+document.getElementById('challenges-btn').addEventListener('click',()=>{
+  openScreen('challenges-screen');
+  document.getElementById('challenges-btn').classList.add('active');
+  document.getElementById('ch-coins').textContent=coins;
+  renderDailyChallenges();renderMonthlyChallenges();renderSeasonalChallenges();
+});
+document.getElementById('achievements-btn').addEventListener('click',()=>{
+  openScreen('achievements-screen');
+  document.getElementById('achievements-btn').classList.add('active');
+  document.getElementById('ac-coins').textContent=coins;
+  renderAchievements();
+});
+document.getElementById('lr-close').addEventListener('click',()=>{document.getElementById('locker-room').classList.add('hidden');document.getElementById('locker-btn').classList.remove('active');});
+
+function submitCheat(){
+  const input=document.getElementById('cheat-input');
+  const msg=document.getElementById('cheat-msg');
+  const code=input.value.trim().toUpperCase();
+  if(!code){msg.style.color='#ff4444';msg.textContent='CODE EINGEBEN!';return;}
+  const cheat=CHEAT_CODES[code];
+  if(!cheat){msg.style.color='#ff4444';msg.textContent='UNGÜLTIGER CODE!';return;}
+  coins+=cheat.coins;updateCoinDisplay();saveAll();
+  document.getElementById('lr-coins').textContent=coins;
+  msg.style.color='#00ff41';msg.textContent=cheat.msg;
+  input.value='';
+  showToast(cheat.msg,'#ffaa00');
+}
+document.getElementById('cheat-submit').addEventListener('click',submitCheat);
+document.getElementById('cheat-input').addEventListener('keydown',e=>{if(e.key==='Enter')submitCheat();});
+document.getElementById('ch-close').addEventListener('click',()=>{document.getElementById('challenges-screen').classList.add('hidden');document.getElementById('challenges-btn').classList.remove('active');});
+document.getElementById('ac-close').addEventListener('click',()=>{document.getElementById('achievements-screen').classList.add('hidden');document.getElementById('achievements-btn').classList.remove('active');});
+document.querySelectorAll('.lr-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.lr-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.lr-section').forEach(s=>s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+    if(tab.dataset.tab==='inventory') renderInventory();
+  });
+});
+
+/* ══════════════════════════════
+   MODE SELECT
+══════════════════════════════ */
+modeGrid.querySelectorAll('.mode-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    modeGrid.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');currentMode=btn.dataset.mode;setTheme(currentMode);
+  });
+});
+
+/* ══════════════════════════════
+   NAME SCREEN
+══════════════════════════════ */
+function confirmName(){
+  const n=document.getElementById('name-input').value.trim()||'AAA';
+  playerName=n.toUpperCase().slice(0,8);save('snakeName',playerName);
+  document.getElementById('name-screen').classList.add('hidden');showStart();
+}
+document.getElementById('name-ok').addEventListener('click',confirmName);
+document.getElementById('name-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmName();});
+
+function showStart(){
+  state='idle';
+  showLoginPopup();
+  // Show best score per mode
+  const allScores=getScores();
+  ['classic','ghost','tunnel','hardcore','maze'].forEach(m=>{
+    const el=document.getElementById('best-'+m);
+    if(!el) return;
+    const best=allScores.filter(s=>s.mode===m).sort((a,b)=>b.score-a.score)[0];
+    el.textContent=best?'BEST: '+best.score:'';
+  });
+  oTitle.textContent='WÄHLE MODUS';
+  const col=MODES[currentMode].color;
+  oTitle.style.color=col;oTitle.style.textShadow=`0 0 10px ${col},0 0 28px ${col}`;
+  const pb=prestigeLevel>0?' '+prestigeBadge(prestigeLevel):'';
+  oSub.textContent=playerName?'👾 '+playerName+pb:'';oSub.classList.remove('hidden');
+  oScore.classList.add('hidden');oHint.textContent='';
+  modeGrid.classList.remove('hidden');
+  document.getElementById('menu-btn').style.display='none';
+  document.getElementById('rebirth-btn').style.display='none';
+  startBtn.textContent='▶ START';
+  overlay.classList.remove('hidden');
+}
+
+if(playerName){document.getElementById('name-screen').classList.add('hidden');showStart();}
+else{document.getElementById('name-screen').classList.remove('hidden');}
+
+/* ══════════════════════════════
+   BUTTONS
+══════════════════════════════ */
+
+
+document.getElementById('rebirth-btn').addEventListener('click',()=>{
+  const rebirthCost=1500+(rebirthCount*500);
+  if(coins<rebirthCost) return;
+  coins-=rebirthCost; updateCoinDisplay(); saveAll();
+  rebirthCount++;
+  // Reset snake to start but keep score/level
+  const cx=Math.floor(COLS/2),cy=Math.floor(ROWS/2);
+  snake=[{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy}];
+  dir=nextDir={x:1,y:0};
+  document.getElementById('rebirth-btn').style.display='none';
+  document.getElementById('menu-btn').style.display='none';
+  document.getElementById('rebirth-btn').style.display='none';
+  overlay.classList.add('hidden');
+  pauseBtn.classList.add('active');
+  pauseBtn.textContent='⏸ PAUSE';
+  state='running';
+  clearInterval(gameLoop);
+  gameLoop=setInterval(tick,speed);
+  showToast('💫 REBIRTH! '+rebirthCount+'x','#ffaa00');
+});
+
+document.getElementById('menu-btn').addEventListener('click',()=>{
+  clearInterval(gameLoop);
+  overlay.classList.add('hidden');
+  document.getElementById('menu-btn').style.display='none';
+  document.getElementById('rebirth-btn').style.display='none';
+  showStart();
+  showMenuPanel();
+});
+startBtn.addEventListener('click',()=>{
+  if(state==='idle'||state==='dead') init();
+  else if(state==='paused'){state='running';overlay.classList.add('hidden');pauseBtn.textContent='⏸ PAUSE';document.getElementById('menu-btn').style.display='none';gameLoop=setInterval(tick,speed);}
+});
+
+function togglePause(){
+  if(state==='running'){
+    state='paused';clearInterval(gameLoop);pauseBtn.textContent='▶ WEITER';
+    const col=MODES[currentMode].color;
+    oTitle.textContent='PAUSE';oTitle.style.color=col;oTitle.style.textShadow=`0 0 10px ${col},0 0 28px ${col}`;
+    oSub.textContent='LEVEL '+level+'  •  '+score+' PTS';oSub.classList.remove('hidden');
+    oScore.classList.add('hidden');oHint.textContent='';
+    modeGrid.classList.add('hidden');if(sbEl)sbEl.classList.add('hidden');
+    startBtn.textContent='▶ WEITER';
+    document.getElementById('menu-btn').style.display='';
+    overlay.classList.remove('hidden');
+  } else if(state==='paused'){
+    state='running';overlay.classList.add('hidden');pauseBtn.textContent='⏸ PAUSE';document.getElementById('menu-btn').style.display='none';gameLoop=setInterval(tick,speed);
+  }
+}
+pauseBtn.addEventListener('click',togglePause);
+
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('name-screen')&&!document.getElementById('name-screen').classList.contains('hidden')) return;
+  if(document.activeElement&&document.activeElement.id==='settings-name-input') return;
+  if(e.key===' '||e.key==='Enter'){
+    if(state==='idle'||state==='dead') init();
+    else if(state==='paused'){state='running';overlay.classList.add('hidden');pauseBtn.textContent='⏸ PAUSE';document.getElementById('menu-btn').style.display='none';gameLoop=setInterval(tick,speed);}
+    e.preventDefault();
+  }
+  if(e.key==='p'||e.key==='P') togglePause();
+  const mv={'ArrowUp':{x:0,y:-1},'w':{x:0,y:-1},'W':{x:0,y:-1},'ArrowDown':{x:0,y:1},'s':{x:0,y:1},'S':{x:0,y:1},'ArrowLeft':{x:-1,y:0},'a':{x:-1,y:0},'A':{x:-1,y:0},'ArrowRight':{x:1,y:0},'d':{x:1,y:0},'D':{x:1,y:0}};
+  const m=mv[e.key];
+  if(m){if(state==='running'&&(m.x!==-dir.x||m.y!==-dir.y))nextDir=m;e.preventDefault();}
+});
+
+['d-up','d-down','d-left','d-right'].forEach(id=>{
+  const map={'d-up':{x:0,y:-1},'d-down':{x:0,y:1},'d-left':{x:-1,y:0},'d-right':{x:1,y:0}};
+  document.getElementById(id).addEventListener('click',()=>{
+    const m=map[id];if(state==='running'&&(m.x!==-dir.x||m.y!==-dir.y))nextDir=m;
+  });
+});
+
+let ts=null;
+canvas.addEventListener('touchstart',e=>{ts=e.touches[0];e.preventDefault();},{passive:false});
+canvas.addEventListener('touchend',e=>{
+  if(!ts)return;
+  const dx=e.changedTouches[0].clientX-ts.clientX,dy=e.changedTouches[0].clientY-ts.clientY;
+  if(Math.abs(dx)>Math.abs(dy)){const m=dx>0?{x:1,y:0}:{x:-1,y:0};if(m.x!==-dir.x)nextDir=m;}
+  else{const m=dy>0?{x:0,y:1}:{x:0,y:-1};if(m.y!==-dir.y)nextDir=m;}
+  e.preventDefault();
+},{passive:false});
+/* ══════════════════════════════
+   TOAST
+══════════════════════════════ */
+let toastTimer=null;
+function showToast(msg,col){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.borderColor=col||'var(--c)';t.style.boxShadow=`0 0 14px ${col||'var(--c)'}`;t.style.color=col||'var(--c)';
+  t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+/* ══════════════════════════════
+   ACHIEVEMENTS
+══════════════════════════════ */
+// tier: bronze=🥉, silver=🥈, gold=🥇
+const ACHIEVEMENTS=[
+  {id:'first_fruit',  icon:'🍎', name:'ERSTER BISS',    desc:'Erste Frucht gesammelt',         req:{stat:'totalFruits',  val:1},    reward:10,  tier:'bronze'},
+  {id:'fruit_50',     icon:'🍇', name:'OBSTGARTEN',     desc:'50 Früchte gesammelt',            req:{stat:'totalFruits',  val:50},   reward:30,  tier:'bronze'},
+  {id:'fruit_200',    icon:'🍉', name:'FRUCHT-KÖNIG',   desc:'200 Früchte gesammelt',           req:{stat:'totalFruits',  val:200},  reward:100, tier:'silver'},
+  {id:'fruit_500',    icon:'🌳', name:'OBSTWALD',       desc:'500 Früchte gesammelt',           req:{stat:'totalFruits',  val:500},  reward:300, tier:'gold'},
+  {id:'level_5',      icon:'⬆️', name:'AUFSTEIGER',     desc:'Level 5 erreicht',                req:{stat:'maxLevel',     val:5},    reward:25,  tier:'bronze'},
+  {id:'level_10',     icon:'🚀', name:'PROFI',          desc:'Level 10 erreicht',               req:{stat:'maxLevel',     val:10},   reward:75,  tier:'silver'},
+  {id:'level_15',     icon:'👑', name:'MEISTER',        desc:'Level 15 erreicht',               req:{stat:'maxLevel',     val:15},   reward:200, tier:'gold'},
+  {id:'score_500',    icon:'💯', name:'PUNKTE-JÄGER',   desc:'500 Punkte in einem Spiel',       req:{stat:'maxScore',     val:500},  reward:40,  tier:'bronze'},
+  {id:'score_2000',   icon:'💥', name:'HIGH ROLLER',    desc:'2000 Punkte in einem Spiel',      req:{stat:'maxScore',     val:2000}, reward:150, tier:'silver'},
+  {id:'length_20',    icon:'🐍', name:'GROSSE SCHLANGE', desc:'Länge 20 erreicht',               req:{stat:'maxLength',    val:20},   reward:60,  tier:'bronze'},
+  {id:'length_40',    icon:'🐲', name:'DRACHEN',        desc:'Länge 40 erreicht',               req:{stat:'maxLength',    val:40},   reward:200, tier:'gold'},
+  {id:'games_10',     icon:'🎮', name:'STAMMGAST',      desc:'10 Spiele gespielt',              req:{stat:'totalGames',   val:10},   reward:20,  tier:'bronze'},
+  {id:'games_50',     icon:'🕹️', name:'SÜCHTIG',        desc:'50 Spiele gespielt',              req:{stat:'totalGames',   val:50},   reward:80,  tier:'silver'},
+  {id:'all_modes',    icon:'🌈', name:'ALLROUNDER',     desc:'Alle 5 Modi gespielt',            req:{stat:'modesPlayed',  val:5},    reward:100, tier:'silver'},
+  {id:'no_revive',    icon:'💪', name:'KEIN REVIVE',    desc:'Level 10 ohne Revive erreicht',   req:{stat:'noReviveL10',  val:1},    reward:150, tier:'gold'},
+  {id:'fruit_1000',   icon:'🌴', name:'FRUCHT-LEGENDE', desc:'1000 Früchte gesammelt',          req:{stat:'totalFruits',  val:1000}, reward:500, tier:'gold'},
+  {id:'score_5000',   icon:'🔥', name:'FEUER-SCORER',   desc:'5000 Punkte in einem Spiel',      req:{stat:'maxScore',     val:5000}, reward:300, tier:'gold'},
+  {id:'score_10000',  icon:'💫', name:'LEGENDE',        desc:'10000 Punkte in einem Spiel',     req:{stat:'maxScore',     val:10000},reward:600, tier:'gold'},
+  {id:'games_100',    icon:'🎯', name:'PROFI-SPIELER',  desc:'100 Spiele gespielt',             req:{stat:'totalGames',   val:100},  reward:200, tier:'gold'},
+  {id:'length_60',    icon:'🐉', name:'MEGA-DRACHE',    desc:'Länge 60 erreicht',               req:{stat:'maxLength',    val:60},   reward:400, tier:'gold'},
+  {id:'score_1000',   icon:'⭐', name:'TAUSENDER',      desc:'1000 Punkte in einem Spiel',      req:{stat:'maxScore',     val:1000}, reward:80,  tier:'bronze'},
+  {id:'fruit_100',    icon:'🍱', name:'OBSTKORB',       desc:'100 Früchte gesammelt',           req:{stat:'totalFruits',  val:100},  reward:60,  tier:'silver'},
+  {id:'games_25',     icon:'🕹️', name:'REGULAR',        desc:'25 Spiele gespielt',              req:{stat:'totalGames',   val:25},   reward:50,  tier:'bronze'},
+  {id:'length_10',    icon:'🐛', name:'WÜRMCHEN',       desc:'Länge 10 erreicht',               req:{stat:'maxLength',    val:10},   reward:15,  tier:'bronze'},
+  {id:'length_30',    icon:'🐍', name:'SCHLANGE',       desc:'Länge 30 erreicht',               req:{stat:'maxLength',    val:30},   reward:100, tier:'silver'},
+];
+
+let stats     = load('snakeStats2',  {totalFruits:0,maxLevel:0,maxScore:0,maxLength:0,totalGames:0,modesPlayed:0,noReviveL10:0});
+let modesSet  = load('snakeModesSet', []);
+let achieved  = load('snakeAchieved', []);
+
+function checkAchievements(){
+  ACHIEVEMENTS.forEach(a=>{
+    if(achieved.includes(a.id)) return;
+    const cur=stats[a.req.stat]||0;
+    if(cur>=a.req.val){
+      achieved.push(a.id);save('snakeAchieved',achieved);
+      coins+=a.reward;updateCoinDisplay();saveAll();
+      const tierIcon={bronze:'🥉',silver:'🥈',gold:'🥇'}[a.tier]||'🏆';
+      const tierCol={bronze:'#cd7f32',silver:'#aaaaaa',gold:'#ffdd00'}[a.tier]||'#ffaa00';
+      showToast(`${tierIcon} ${a.name} +${a.reward}🪙`,tierCol);
+    }
+  });
+}
+
+function renderAchievements(){
+  const list=document.getElementById('achievement-list');
+  list.innerHTML='';
+  const total=ACHIEVEMENTS.length, done=achieved.length;
+  const fill=document.getElementById('ach-progress-fill');
+  const text=document.getElementById('ach-progress-text');
+  if(fill) fill.style.width=Math.round(done/total*100)+'%';
+  if(text) text.textContent=`${done} / ${total} ERFOLGE`;
+  // Count per tier
+  const tierCounts={bronze:0,silver:0,gold:0};
+  const tierDone={bronze:0,silver:0,gold:0};
+  ACHIEVEMENTS.forEach(a=>{tierCounts[a.tier]=(tierCounts[a.tier]||0)+1;if(achieved.includes(a.id))tierDone[a.tier]=(tierDone[a.tier]||0)+1;});
+  // Tier summary
+  const summary=document.createElement('div');
+  summary.style.cssText='display:flex;gap:8px;justify-content:center;margin-bottom:12px;width:100%;';
+  summary.innerHTML=[
+    {t:'bronze',icon:'🥉',col:'#cd7f32'},
+    {t:'silver',icon:'🥈',col:'#aaaaaa'},
+    {t:'gold',  icon:'🥇',col:'#ffdd00'},
+  ].map(({t,icon,col})=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;border:1px solid ${col};background:rgba(255,255,255,.03);">
+    <span style="font-size:16px;">${icon}</span>
+    <span style="font-size:clamp(5px,1vw,7px);color:${col};">${tierDone[t]||0}/${tierCounts[t]||0}</span>
+  </div>`).join('');
+  list.appendChild(summary);
+  // Group by tier
+  ['bronze','silver','gold'].forEach(tier=>{
+    const tierIcon={bronze:'🥉',silver:'🥈',gold:'🥇'}[tier];
+    const tierCol={bronze:'#cd7f32',silver:'#aaaaaa',gold:'#ffdd00'}[tier];
+    const header=document.createElement('div');
+    header.style.cssText=`font-size:clamp(6px,1.2vw,8px);color:${tierCol};letter-spacing:.15em;margin:10px 0 6px;width:100%;text-align:left;`;
+    header.textContent=tierIcon+' '+(tier==='bronze'?'BRONZE':tier==='silver'?'SILBER':'GOLD');
+    list.appendChild(header);
+    ACHIEVEMENTS.filter(a=>a.tier===tier).forEach(a=>{
+    const unlocked=achieved.includes(a.id);
+    const cur=Math.min(stats[a.req.stat]||0,a.req.val);
+    const card=document.createElement('div');
+    card.className='achievement-card'+(unlocked?' unlocked':'');
+    card.innerHTML=`<div class="achievement-icon">${a.icon}</div>
+    <div class="achievement-info">
+      <div class="achievement-name">${a.name}</div>
+      <div class="achievement-desc">${a.desc}</div>
+      ${!unlocked?`<div class="achievement-desc" style="margin-top:3px">${cur}/${a.req.val}</div>`:''}
+      <div class="achievement-reward">${unlocked?'✓ ABGEHOLT':'+'+a.reward+'🪙'}</div>
+    </div>`;
+    list.appendChild(card);
+    });
+  });
+}
+
+/* ══════════════════════════════
+   DAILY CHALLENGES
+══════════════════════════════ */
+const CHALLENGE_POOL=[
+  {id:'c_fruits_10',  title:'SCHNELLE ERNTE',    desc:'Sammle 10 Früchte',          type:'fruits',  target:10,  reward:15},
+  {id:'c_fruits_25',  title:'OBSTSALAT',         desc:'Sammle 25 Früchte',          type:'fruits',  target:25,  reward:35},
+  {id:'c_fruits_50',  title:'OBSTBAUER',         desc:'Sammle 50 Früchte',          type:'fruits',  target:50,  reward:60},
+  {id:'c_level_3',    title:'AUFWÄRMEN',         desc:'Erreiche Level 3',           type:'level',   target:3,   reward:20},
+  {id:'c_level_5',    title:'DURCHSTARTER',      desc:'Erreiche Level 5',           type:'level',   target:5,   reward:40},
+  {id:'c_level_8',    title:'EXPERTE',           desc:'Erreiche Level 8',           type:'level',   target:8,   reward:80},
+  {id:'c_score_300',  title:'PUNKTEJÄGER',       desc:'Erreiche 300 Punkte',        type:'score',   target:300, reward:25},
+  {id:'c_score_1000', title:'TAUSENDER',         desc:'Erreiche 1000 Punkte',       type:'score',   target:1000,reward:70},
+  {id:'c_length_15',  title:'LANGER WURM',       desc:'Erreiche Länge 15',          type:'length',  target:15,  reward:30},
+  {id:'c_length_25',  title:'RIESENSCHLANGE',    desc:'Erreiche Länge 25',          type:'length',  target:25,  reward:65},
+  {id:'c_games_3',    title:'AUSDAUER',          desc:'Spiele 3 Runden',            type:'games',   target:3,   reward:12},
+  {id:'c_nodie_l3',   title:'UNVERWUNDBAR',      desc:'Level 3 ohne zu sterben',    type:'nodie',   target:3,   reward:50},
+];
+
+function todayKey(){ const d=new Date(); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
+function monthKey(){ const d=new Date(); return `${d.getFullYear()}-${d.getMonth()}`; }
+
+function getDailyChallenges(){
+  const key=todayKey()+'v2';
+  if(load('snakeDailyKey','')===key) return load('snakeDailyChallenges',[]);
+  const pool=[...CHALLENGE_POOL];
+  const picked=[];
+  while(picked.length<5&&pool.length>0){const i=Math.floor(Math.random()*pool.length);picked.push({...pool[i],progress:0,claimed:false});pool.splice(i,1);}
+  save('snakeDailyKey',key);save('snakeDailyChallenges',picked);return picked;
+}
+function saveDailyChallenges(list){ save('snakeDailyChallenges',list); }
+
+const MONTHLY_POOL=[
+  {id:'m_fruits_300', title:'ERNTESAISON',    desc:'Sammle 300 Früchte diesen Monat',   type:'fruits',  target:300,  reward:200},
+  {id:'m_fruits_1000',title:'OBSTKÖNIG',      desc:'Sammle 1000 Früchte diesen Monat',  type:'fruits',  target:1000, reward:600},
+  {id:'m_level_10',   title:'AUFSTIEG',       desc:'Erreiche Level 10 in einem Spiel',  type:'level',   target:10,   reward:150},
+  {id:'m_level_15',   title:'MEISTERKLASSE',  desc:'Erreiche Level 15 in einem Spiel',  type:'level',   target:15,   reward:400},
+  {id:'m_score_5000', title:'HIGHSCORER',     desc:'Erreiche 5000 Punkte in einem Spiel',type:'score', target:5000, reward:300},
+  {id:'m_games_30',   title:'MARATHON',       desc:'Spiele 30 Runden diesen Monat',     type:'games',   target:30,   reward:180},
+  {id:'m_games_100',  title:'LEGENDE',        desc:'Spiele 100 Runden diesen Monat',    type:'games',   target:100,  reward:500},
+  {id:'m_length_35',  title:'RIESENWURM',     desc:'Erreiche Länge 35 in einem Spiel',  type:'length',  target:35,   reward:250},
+  {id:'m_allmode',    title:'WELTENBUMMLER',  desc:'Spiele jeden Modus diesen Monat',   type:'modes',   target:5,    reward:200},
+];
+
+function getMonthlyChallenges(){
+  const key=monthKey()+'v2';
+  if(load('snakeMonthlyKey','')===key) return load('snakeMonthlyChallenges',[]);
+  const pool=[...MONTHLY_POOL];
+  const picked=[];
+  while(picked.length<5&&pool.length>0){const i=Math.floor(Math.random()*pool.length);picked.push({...pool[i],progress:0,claimed:false});pool.splice(i,1);}
+  save('snakeMonthlyKey',key);save('snakeMonthlyChallenges',picked);return picked;
+}
+function saveMonthlyChallenges(list){ save('snakeMonthlyChallenges',list); }
+
+let dailyChallenges=getDailyChallenges();
+let monthlyChallenges=getMonthlyChallenges();
+
+function updateChallengeProgress(gameData){
+  let dChanged=false,mChanged=false;
+  dailyChallenges.forEach(c=>{
+    if(c.claimed)return;
+    const prev=c.progress;
+    switch(c.type){
+      case 'fruits':  c.progress=Math.min(c.target,(c.progress||0)+gameData.fruits);break;
+      case 'level':   c.progress=Math.max(c.progress||0,gameData.level);break;
+      case 'score':   c.progress=Math.max(c.progress||0,gameData.score);break;
+      case 'length':  c.progress=Math.max(c.progress||0,gameData.length);break;
+      case 'mode':    if(gameData.mode===c.target){c.progress=c.target;}break;
+      case 'games':   c.progress=Math.min(c.target,(c.progress||0)+1);break;
+      case 'nodie':   if(gameData.level>=c.target&&gameData.revives===0)c.progress=1;break;
+    }
+    if(c.progress!==prev)dChanged=true;
+    if(c.progress>=c.target&&!c.claimed) showToast(`📅 ${c.title} FERTIG!`,'#00ff41');
+  });
+  monthlyChallenges.forEach(c=>{
+    if(c.claimed)return;
+    const prev=c.progress;
+    switch(c.type){
+      case 'fruits':    c.progress=Math.min(c.target,(c.progress||0)+gameData.fruits);break;
+      case 'level':     c.progress=Math.max(c.progress||0,gameData.level);break;
+      case 'score':     c.progress=Math.max(c.progress||0,gameData.score);break;
+      case 'length':    c.progress=Math.max(c.progress||0,gameData.length);break;
+      case 'games':     c.progress=Math.min(c.target,(c.progress||0)+1);break;
+      case 'modes':     c.progress=Math.min(c.target,modesSet.length);break;
+      case 'modecount': if(gameData.mode===c.modeTarget)c.progress=Math.min(c.target,(c.progress||0)+1);break;
+    }
+    if(c.progress!==prev)mChanged=true;
+    if(c.progress>=c.target&&!c.claimed) showToast(`📆 ${c.title} FERTIG!`,'#00d4ff');
+  });
+  if(dChanged)saveDailyChallenges(dailyChallenges);
+  if(mChanged)saveMonthlyChallenges(monthlyChallenges);
+  // Seasonal
+  if(typeof getSeasonalChallenges==='function'){
+    const seasonal=getSeasonalChallenges(); let sChanged=false;
+    seasonal.forEach(c=>{
+      if(c.claimed) return; const prev=c.progress;
+      switch(c.type){
+        case 'fruits': c.progress=Math.min(c.target,(c.progress||0)+gameData.fruits);break;
+        case 'level':  c.progress=Math.max(c.progress||0,gameData.level);break;
+        case 'score':  c.progress=Math.max(c.progress||0,gameData.score);break;
+        case 'length': c.progress=Math.max(c.progress||0,gameData.length);break;
+        case 'mode':   if(gameData.mode===c.target)c.progress=1;break;
+        case 'games':  c.progress=Math.min(c.target,(c.progress||0)+1);break;
+        case 'modes':  c.progress=Math.min(c.target,modesSet.length);break;
+        case 'coins':  c.progress=Math.min(c.target,coins);break;
+      }
+      if(c.progress!==prev) sChanged=true;
+      if(c.progress>=c.target&&!c.claimed) showToast(getCurrentSeason().icon+' '+c.title+' FERTIG!',getCurrentSeason().color);
+    });
+    if(sChanged) saveSeasonalChallenges(seasonal);
+  }
+}
+
+function buildChallengeList(challenges,listId,saveFunc,type){
+  const list=document.getElementById(listId);
+  list.innerHTML='';
+  challenges.forEach((c,idx)=>{
+    const done=c.progress>=c.target;
+    const pct=Math.min(100,Math.round((c.progress||0)/c.target*100));
+    const card=document.createElement('div');
+    card.className='challenge-card'+(c.claimed?' claimed':done?' done':'');
+    card.innerHTML=`
+      <div class="challenge-title">${c.title}</div>
+      <div class="challenge-desc">${c.desc}</div>
+      <div class="challenge-progress"><div class="challenge-bar" style="width:${pct}%"></div></div>
+      <div class="challenge-foot">
+        <span class="challenge-reward">+${c.reward}🪙</span>
+        <span>${c.claimed?'<span class="challenge-done-badge">✓ ERLEDIGT</span>':
+          done?`<button class="challenge-claim" data-idx="${idx}">ABHOLEN</button>`:
+          `<span style="font-size:clamp(5px,1vw,6px);color:rgba(255,255,255,.3)">${c.progress||0}/${c.target}</span>`}</span>
+      </div>`;
+    list.appendChild(card);
+  });
+  list.querySelectorAll('.challenge-claim').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const idx=+btn.dataset.idx, c=challenges[idx];
+      if(c.claimed||c.progress<c.target)return;
+      c.claimed=true;coins+=c.reward;updateCoinDisplay();saveAll();saveFunc(challenges);
+      document.getElementById('ch-coins').textContent=coins;
+      buildChallengeList(challenges,listId,saveFunc,type);
+      showToast(`+${c.reward}🪙 ERHALTEN!`,'#ffaa00');
+    });
+  });
+}
+
+function renderDailyChallenges(){
+  dailyChallenges=getDailyChallenges();
+  // countdown
+  clearInterval(window._cdTimer);
+  function updateCountdown(){
+    const now=new Date(),midnight=new Date();midnight.setHours(24,0,0,0);
+    const diff=midnight-now,h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
+    const el=document.getElementById('daily-reset');
+    if(el)el.textContent=`☀️ RESET IN: ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+  updateCountdown();window._cdTimer=setInterval(updateCountdown,1000);
+  buildChallengeList(dailyChallenges,'daily-list',saveDailyChallenges,'daily');
+}
+
+function renderMonthlyChallenges(){
+  monthlyChallenges=getMonthlyChallenges();
+  const now=new Date(),lastDay=new Date(now.getFullYear(),now.getMonth()+1,0);
+  const daysLeft=lastDay.getDate()-now.getDate();
+  const el=document.getElementById('monthly-reset');
+  if(el)el.textContent=`📆 RESET IN: ${daysLeft} TAGE`;
+  buildChallengeList(monthlyChallenges,'monthly-list',saveMonthlyChallenges,'monthly');
+}
+
+// Tab switching inside challenges screen
+document.querySelectorAll('#challenges-screen .lr-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('#challenges-screen .lr-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('#challenges-screen .lr-section').forEach(s=>s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+    if(tab.dataset.tab==='daily')renderDailyChallenges();
+    else if(tab.dataset.tab==='monthly')renderMonthlyChallenges();
+    else renderSeasonalChallenges();
+  });
+});
+
+/* ══════════════════════════════
+   SOUND
+══════════════════════════════ */
+const AC = window.AudioContext || window.webkitAudioContext
+  ? new (window.AudioContext || window.webkitAudioContext)() : null;
+
+function playSound(type){
+  if(!soundEnabled||!AC) return;
+  try{
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.connect(g); g.connect(AC.destination);
+    const t=AC.currentTime;
+    switch(type){
+      case 'eat':
+        o.frequency.setValueAtTime(440,t);
+        o.frequency.exponentialRampToValueAtTime(880,t+.08);
+        g.gain.setValueAtTime(.18,t); g.gain.exponentialRampToValueAtTime(.001,t+.12);
+        o.start(t); o.stop(t+.12); break;
+      case 'levelup':
+        o.type='square';
+        o.frequency.setValueAtTime(330,t);
+        o.frequency.setValueAtTime(440,t+.08);
+        o.frequency.setValueAtTime(660,t+.16);
+        g.gain.setValueAtTime(.15,t); g.gain.exponentialRampToValueAtTime(.001,t+.35);
+        o.start(t); o.stop(t+.35); break;
+      case 'die':
+        o.type='sawtooth';
+        o.frequency.setValueAtTime(300,t);
+        o.frequency.exponentialRampToValueAtTime(60,t+.4);
+        g.gain.setValueAtTime(.2,t); g.gain.exponentialRampToValueAtTime(.001,t+.4);
+        o.start(t); o.stop(t+.4); break;
+      case 'prestige':
+        o.type='sine';
+        o.frequency.setValueAtTime(523,t);
+        o.frequency.setValueAtTime(659,t+.1);
+        o.frequency.setValueAtTime(784,t+.2);
+        o.frequency.setValueAtTime(1047,t+.3);
+        g.gain.setValueAtTime(.18,t); g.gain.exponentialRampToValueAtTime(.001,t+.5);
+        o.start(t); o.stop(t+.5); break;
+    }
+  }catch(e){}
+}
+
+function vibrate(pattern){
+  if(navigator.vibrate) navigator.vibrate(pattern);
+}
+
+/* ══════════════════════════════
+   PRESTIGE
+══════════════════════════════ */
+function prestigePerks(n){
+  const perks=[];
+  perks.push('+'+n*5+'% MEHR COINS PRO FRUCHT');
+  perks.push('+'+n*3+'% MEHR SCORE');
+  return perks;
+}
+
+function updateStatDisplay(){
+  const sg=document.getElementById('stat-games');
+  const sf=document.getElementById('stat-fruits');
+  const sp=document.getElementById('stat-prestige');
+  if(sg) sg.textContent=stats.totalGames||0;
+  if(sf) sf.textContent=stats.totalFruits||0;
+  if(sp) sp.textContent=(prestigeLevel>0?prestigeBadge(prestigeLevel)+' ':'')+prestigeLevel;
+}
+updateStatDisplay();
+
+function renderPrestigeScreen(){
+  document.getElementById('pr-coins').textContent=coins;
+  const badge=prestigeLevel>0?prestigeBadge(prestigeLevel):'🏅';
+  document.getElementById('prestige-badge-display').textContent=badge;
+  document.getElementById('prestige-level-display').textContent=`PRESTIGE ${prestigeLevel>0?prestigeBadge(prestigeLevel):''}${prestigeLevel}`;
+  const nextPerks=prestigePerks(prestigeLevel+1);
+  document.getElementById('prestige-perks').innerHTML=nextPerks.map(p=>`▶ ${p}`).join('<br>');
+  const requiredLevel=10+prestigeLevel;
+  const canPrestige=level>=requiredLevel;
+  const btn=document.getElementById('prestige-confirm-btn');
+  const req=document.getElementById('prestige-req');
+  if(canPrestige){
+    btn.disabled=false;
+    req.textContent='✓ LEVEL '+(10+prestigeLevel)+' ERREICHT — BEREIT!';
+    req.style.color='#00ff41';
+  } else {
+    btn.disabled=true;
+    req.textContent='LEVEL '+level+'/'+(10+prestigeLevel)+' — NOCH NICHT BEREIT';
+    req.style.color='rgba(255,255,255,.3)';
+  }
+}
+
+document.getElementById('prestige-btn').addEventListener('click',()=>{
+  openScreen('prestige-screen');
+  document.getElementById('prestige-btn').classList.add('active');
+  renderPrestigeScreen();
+});
+document.getElementById('pr-close').addEventListener('click',()=>{
+  document.getElementById('prestige-screen').classList.add('hidden');
+  document.getElementById('prestige-btn').classList.remove('active');
+});
+document.getElementById('prestige-confirm-btn').addEventListener('click',()=>{
+  const reqLvl=10+prestigeLevel;
+  if(level<reqLvl) return;
+  prestigeLevel++;
+  save('snakePrestige', prestigeLevel);
+  // Only save prestige level - no reset of scores/best/level
+  playSound('prestige'); vibrate([50,30,50,30,200]);
+  showToast(`🏅 PRESTIGE ${prestigeLevel}! ${prestigeBadge(prestigeLevel)}`,'#ffaa00');
+  updateStatDisplay();
+  renderPrestigeScreen();
+  document.getElementById('prestige-screen').classList.add('hidden');
+  document.getElementById('prestige-btn').classList.remove('active');
+});
+
+// Hook sounds into game events
+const _origDie = die;
+
+/* ══════════════════════════════
+   LEADERBOARD
+══════════════════════════════ */
+let currentLbTab='all';
+function renderLeaderboard(filter){
+  currentLbTab=filter||'all';
+  const list=document.getElementById('leaderboard-list');
+  let scores=getScores();
+  if(currentLbTab!=='all') scores=scores.filter(s=>s.mode===currentLbTab);
+  scores.sort((a,b)=>b.score-a.score);
+  if(!scores.length){
+    list.innerHTML=`<div class="lb-empty">NOCH KEINE EINTRÄGE</div>`;
+    return;
+  }
+  const medals=['🥇','🥈','🥉','4.','5.','6.','7.','8.'];
+  list.innerHTML=scores.slice(0,8).map((s,i)=>{
+    const cls=i===0?'lb-top1':i===1?'lb-top2':i===2?'lb-top3':'';
+    const dot=`<span class="lb-mode-dot" style="background:${modeColors[s.mode]||'#fff'}"></span>`;
+    return `<div class="lb-row ${cls}">
+      <span class="lb-rank">${medals[i]||i+1+'.'}</span>
+      <span class="lb-name">${dot}${s.name}</span>
+      <span class="lb-score">${s.score}</span>
+      <span class="lb-level">LV${s.level}</span>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('leaderboard-btn').addEventListener('click',()=>{
+  openScreen('leaderboard-screen');
+  document.getElementById('leaderboard-btn').classList.add('active');
+  document.getElementById('lb-coins').textContent=coins;
+  renderLeaderboard('all');
+});
+document.getElementById('lb-close').addEventListener('click',()=>{
+  document.getElementById('leaderboard-screen').classList.add('hidden');
+  document.getElementById('leaderboard-btn').classList.remove('active');
+});
+document.querySelectorAll('#leaderboard-screen .lr-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('#leaderboard-screen .lr-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    renderLeaderboard(tab.dataset.lbtab);
+  });
+});
+
+/* ══════════════════════════════
+   STATS SCREEN
+══════════════════════════════ */
+function renderStats(){
+  document.getElementById('st-coins').textContent=coins;
+  document.getElementById('st-games').textContent=stats.totalGames||0;
+  document.getElementById('st-score').textContent=stats.maxScore||0;
+  document.getElementById('st-level').textContent=stats.maxLevel||0;
+  document.getElementById('st-length').textContent=stats.maxLength||0;
+  document.getElementById('st-fruits').textContent=stats.totalFruits||0;
+  document.getElementById('st-earned').textContent=stats.totalCoinsEarned||0;
+  document.getElementById('st-spent').textContent=stats.totalCoinsSpent||0;
+  document.getElementById('st-prestige').textContent=prestigeLevel||0;
+  const mc=stats.modeCount||{};
+  const fav=Object.entries(mc).sort((a,b)=>b[1]-a[1])[0];
+  const modeNames={classic:'CLASSIC',ghost:'GHOST',tunnel:'TUNNEL',hardcore:'HARDCORE',maze:'MAZE'};
+  document.getElementById('st-mode').textContent=fav?modeNames[fav[0]]||fav[0]:'-';
+  document.getElementById('st-streak').textContent=load('snakeStreak',0);
+  document.getElementById('st-best-streak').textContent=load('snakeBestStreak',0);
+}
+document.getElementById('stats-btn').addEventListener('click',()=>{
+  openScreen('stats-screen');
+  document.getElementById('stats-btn').classList.add('active');
+  renderStats();
+});
+document.getElementById('st-close').addEventListener('click',()=>{
+  document.getElementById('stats-screen').classList.add('hidden');
+  document.getElementById('stats-btn').classList.remove('active');
+});
+document.getElementById('reset-stats-btn').addEventListener('click',()=>{
+  if(!confirm('Stats wirklich zurücksetzen?')) return;
+  stats={totalFruits:0,maxLevel:0,maxScore:0,maxLength:0,totalGames:0,modesPlayed:0,noReviveL10:0,totalCoinsEarned:0,totalCoinsSpent:0,modeCount:{}};
+  save('snakeStats2',stats);
+  modesSet=[];save('snakeModesSet',[]);
+  renderStats();
+  showToast('🗑 STATS ZURÜCKGESETZT','#ff4444');
+});
+
+/* ══════════════════════════════
+   CHEAT CODES
+══════════════════════════════ */
+const CHEAT_CODES = {
+  'SNAKE1000':  {coins:1000,  msg:'🐍 +1000 COINS!'},
+  'SNAKE5000':  {coins:5000,  msg:'🐍 +5000 COINS!'},
+  'SNAKE10000': {coins:10000, msg:'🐍 +10000 COINS!'},
+  'FRUCHT2000': {coins:2000,  msg:'🍎 +2000 COINS!'},
+  'PRESTIGE500':{coins:500,   msg:'🏅 +500 COINS!'},
+  'RETRO9999':  {coins:9999,  msg:'🎮 +9999 COINS!'},
+};
+const usedCodes = load('snakeUsedCodes', []);
+
+
+/* ══════════════════════════════
+   STREAK
+══════════════════════════════ */
+function updateStreak(){
+  const today=todayKey();
+  const lastPlayed=load('snakeLastPlayed','');
+  const streak=load('snakeStreak',0);
+  const bestStreak=load('snakeBestStreak',0);
+  const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  const yKey=`${yesterday.getFullYear()}-${yesterday.getMonth()}-${yesterday.getDate()}`;
+  if(lastPlayed===today) return;
+  let newStreak=lastPlayed===yKey?streak+1:1;
+  save('snakeLastPlayed',today);
+  save('snakeStreak',newStreak);
+  if(newStreak>bestStreak) save('snakeBestStreak',newStreak);
+  if(newStreak>=3) showToast(`🔥 ${newStreak} TAGE STREAK!`,'#ff6600');
+}
+
+
+/* ══════════════════════════════
+   SAISONALE CHALLENGES
+══════════════════════════════ */
+function getCurrentSeason(){
+  const m=new Date().getMonth();
+  if(m>=2&&m<=4) return {name:'FRÜHLING',icon:'🌸',color:'#ff88aa'};
+  if(m>=5&&m<=7) return {name:'SOMMER',  icon:'☀️', color:'#ffdd00'};
+  if(m>=8&&m<=10) return {name:'HERBST', icon:'🍂', color:'#ff8800'};
+  return                  {name:'WINTER', icon:'❄️', color:'#88eeff'};
+}
+const SEASONAL_CHALLENGES={
+  'FRÜHLING':[
+    {id:'sp1',title:'BLÜTEZEIT',    desc:'Sammle 100 Früchte',   type:'fruits',target:100, reward:300},
+    {id:'sp2',title:'NEUANFANG',    desc:'Erreiche Level 5',     type:'level', target:5,   reward:200},
+    {id:'sp3',title:'FRÜHLINGSLUFT',desc:'Spiele 20 Runden',     type:'games', target:20,  reward:250},
+    {id:'sp4',title:'WACHSTUM',     desc:'Erreiche Länge 30',    type:'length',target:30,  reward:400},
+    {id:'sp5',title:'ERNTE',        desc:'Sammle 500 Früchte',   type:'fruits',target:500, reward:800},
+  ],
+  'SOMMER':[
+    {id:'su1',title:'HITZEWELLE',   desc:'Erreiche 3000 Punkte', type:'score', target:3000,reward:200},
+    {id:'su2',title:'SOMMERFERIEN', desc:'Spiele 30 Runden',     type:'games', target:30,  reward:300},
+    {id:'su3',title:'SONNENSCHEIN', desc:'Erreiche 5000 Punkte', type:'score', target:5000,reward:500},
+    {id:'su4',title:'STRANDTAG',    desc:'Sammle 200 Früchte',   type:'fruits',target:200, reward:350},
+    {id:'su5',title:'REKORD',       desc:'Erreiche Level 10',    type:'level', target:10,  reward:600},
+  ],
+  'HERBST':[
+    {id:'au1',title:'ERNTE',        desc:'Sammle 300 Früchte',   type:'fruits',target:300, reward:400},
+    {id:'au2',title:'LAUB',         desc:'Spiele alle 5 Modi',   type:'modes', target:5,   reward:300},
+    {id:'au3',title:'HERBSTSTURM',  desc:'Spiele 25 Runden',     type:'games', target:25,  reward:200},
+    {id:'au4',title:'VORBEREITUNG', desc:'Sammle 1000 Coins',    type:'coins', target:1000,reward:500},
+    {id:'au5',title:'LETZTES BLATT',desc:'Erreiche Länge 50',    type:'length',target:50,  reward:800},
+  ],
+  'WINTER':[
+    {id:'wi1',title:'EISKALT',      desc:'Erreiche Länge 20',    type:'length',target:20,  reward:200},
+    {id:'wi2',title:'SCHNEEFALL',   desc:'Sammle 150 Früchte',   type:'fruits',target:150, reward:300},
+    {id:'wi3',title:'WINTERSCHLAF', desc:'Spiele 15 Runden',     type:'games', target:15,  reward:250},
+    {id:'wi4',title:'JAHRESENDE',   desc:'Erreiche 3000 Punkte', type:'score', target:3000,reward:400},
+    {id:'wi5',title:'NEUJAHR',      desc:'Erreiche Level 8',     type:'level', target:8,   reward:500},
+  ],
+};
+function getSeasonalChallenges(){
+  const s=getCurrentSeason();
+  const key='snakeSeasonal_'+s.name;
+  const saved=load(key,null);
+  if(saved) return saved;
+  const ch=SEASONAL_CHALLENGES[s.name].map(c=>({...c,progress:0,claimed:false}));
+  save(key,ch); return ch;
+}
+function saveSeasonalChallenges(list){ save('snakeSeasonal_'+getCurrentSeason().name,list); }
+function renderSeasonalChallenges(){
+  const s=getCurrentSeason();
+  const el=document.getElementById('seasonal-info');
+  if(el) el.textContent=s.icon+' '+s.name+' — SAISON CHALLENGES';
+  buildChallengeList(getSeasonalChallenges(),'seasonal-list',saveSeasonalChallenges,'seasonal');
+}
+// Hook into updateChallengeProgress
+
+
+/* ══════════════════════════════
+   EINSTELLUNGEN
+══════════════════════════════ */
+let soundEnabled     = load('snakeSound',     true);
+let vibrationEnabled = load('snakeVibration', true);
+let musicEnabled     = load('snakeMusic',     true);
+let musicNode=null, musicGain=null;
+
+function updateToggleBtn(id,enabled){
+  const btn=document.getElementById(id);if(!btn)return;
+  btn.textContent=enabled?'AN':'AUS';
+  btn.style.borderColor=enabled?'#00ff41':'#ff4444';
+  btn.style.color=enabled?'#00ff41':'#ff4444';
+  btn.style.boxShadow=enabled?'0 0 8px #00ff41':'0 0 8px #ff4444';
+}
+document.getElementById('settings-btn').addEventListener('click',()=>{
+  openScreen('settings-screen');
+  document.getElementById('settings-btn').classList.add('active');
+  updateToggleBtn('sound-toggle',soundEnabled);
+  updateToggleBtn('vibration-toggle',vibrationEnabled);
+  updateToggleBtn('music-toggle',musicEnabled);
+});
+document.getElementById('settings-btn').addEventListener('click',()=>{
+  document.getElementById('settings-name-input').value=playerName||'';
+}, true);
+document.getElementById('change-name-btn').addEventListener('click',()=>{
+  const n=document.getElementById('settings-name-input').value.trim();
+  if(!n) return;
+  playerName=n.toUpperCase().slice(0,8);
+  save('snakeName',playerName);
+  const _pb=prestigeLevel>0?' '+prestigeBadge(prestigeLevel):'';
+  if(oSub) oSub.textContent='👾 '+playerName+_pb;
+  showToast('👾 NAME: '+playerName,'#00ccff');
+});
+document.getElementById('settings-close').addEventListener('click',()=>{
+  document.getElementById('settings-screen').classList.add('hidden');
+  document.getElementById('settings-btn').classList.remove('active');
+});
+document.getElementById('sound-toggle').addEventListener('click',()=>{
+  soundEnabled=!soundEnabled; save('snakeSound',soundEnabled);
+  updateToggleBtn('sound-toggle',soundEnabled);
+});
+document.getElementById('vibration-toggle').addEventListener('click',()=>{
+  vibrationEnabled=!vibrationEnabled; save('snakeVibration',vibrationEnabled);
+  updateToggleBtn('vibration-toggle',vibrationEnabled);
+});
+document.getElementById('music-toggle').addEventListener('click',()=>{
+  musicEnabled=!musicEnabled; save('snakeMusic',musicEnabled);
+  updateToggleBtn('music-toggle',musicEnabled);
+  if(musicEnabled) startMusic(); else stopMusic();
+});
+
+function startMusic(){
+  if(!musicEnabled||!AC||musicNode) return;
+  try{
+    musicGain=AC.createGain(); musicGain.gain.value=0.05;
+    musicGain.connect(AC.destination);
+    function playNote(freq,start,dur){
+      const o=AC.createOscillator(),g=AC.createGain();
+      o.type='square'; o.frequency.value=freq;
+      g.gain.setValueAtTime(0,start);
+      g.gain.linearRampToValueAtTime(0.25,start+0.02);
+      g.gain.linearRampToValueAtTime(0,start+dur-0.02);
+      o.connect(g); g.connect(musicGain);
+      o.start(start); o.stop(start+dur);
+    }
+    const melody=[262,294,330,349,392,349,330,294,262,262,294,330,262,0,0,0];
+    const bass=  [131,131,165,165,196,196,165,165,131,131,165,165,131,0,0,0];
+    const beat=60/140;
+    function loop(){
+      if(!musicEnabled){musicNode=null;return;}
+      const t=AC.currentTime;
+      melody.forEach((n,i)=>{if(n>0)playNote(n,t+i*beat,beat*.8);});
+      bass.forEach((n,i)=>{if(n>0){
+        const o=AC.createOscillator(),g=AC.createGain();
+        o.type='triangle';o.frequency.value=n;
+        g.gain.setValueAtTime(0,t+i*beat);
+        g.gain.linearRampToValueAtTime(0.1,t+i*beat+0.02);
+        g.gain.linearRampToValueAtTime(0,t+i*beat+beat*.6);
+        o.connect(g);g.connect(musicGain);
+        o.start(t+i*beat);o.stop(t+i*beat+beat*.8);
+      }});
+      musicNode=setTimeout(loop,(melody.length*beat*1000)-50);
+    }
+    loop();
+  }catch(e){}
+}
+function stopMusic(){
+  clearTimeout(musicNode); musicNode=null;
+  if(musicGain){try{musicGain.disconnect();}catch(e){} musicGain=null;}
+}
+
+
+/* ══════════════════════════════
+   LOGIN POPUP
+══════════════════════════════ */
+function showLoginPopup(){
+  if(load('snakeLastLogin','')===todayKey()) return;
+  const streak=load('snakeStreak',0);
+  const reward=Math.max(10,streak*10);
+  const nextReward=Math.max(10,(streak+1)*10);
+  document.getElementById('login-streak-txt').textContent='TAG '+(streak||1)+' — STREAK: '+(streak||1)+'🔥';
+  document.getElementById('login-coins-txt').textContent='+'+reward+'🪙';
+  const fireTxt=document.getElementById('login-fire-txt');
+  if(streak>=3){
+    fireTxt.innerHTML='🔥 '+streak+' TAGE! MORGEN: +'+nextReward+'🪙';
+  } else {
+    fireTxt.innerHTML='MORGEN: +'+nextReward+'🪙';
+  }
+  document.getElementById('login-popup').classList.remove('hidden');
+}
+function claimLoginReward(){
+  if(load('snakeLastLogin','')===todayKey()) return;
+  save('snakeLastLogin',todayKey());
+  const streak=load('snakeStreak',0);
+  const reward=Math.max(10,streak*10);
+  coins+=reward; updateCoinDisplay(); saveAll();
+}
+document.getElementById('login-claim-btn').addEventListener('click',()=>{
+  claimLoginReward();
+  document.getElementById('login-popup').classList.add('hidden');
+});
+
+/* ══════════════════════════════
+   GLÜCKSRAD
+══════════════════════════════ */
+const SPIN_PRIZES=[
+  {label:'50🪙',   coins:50,   color:'#ff4444'},
+  {label:'100🪙',  coins:100,  color:'#ff8800'},
+  {label:'200🪙',  coins:200,  color:'#ffdd00'},
+  {label:'25🪙',   coins:25,   color:'#44ff44'},
+  {label:'500🪙',  coins:500,  color:'#00ccff'},
+  {label:'75🪙',   coins:75,   color:'#cc44ff'},
+  {label:'🎨 SKIN', coins:0,  color:'#ff44cc', skin:true},
+  {label:'🍀 FRUCHT',coins:0,  color:'#00ff44', fruit:true},
+  {label:'1000🪙', coins:1000, color:'#ffaa00'},
+];
+let spinRotation=0, isSpinning=false;
+function drawWheel(rot){
+  const cv=document.getElementById('spin-canvas');
+  if(!cv) return;
+  const cx=cv.getContext('2d'),c=cv.width/2,r=c-4,slice=Math.PI*2/SPIN_PRIZES.length;
+  cx.clearRect(0,0,cv.width,cv.height);
+  SPIN_PRIZES.forEach((p,i)=>{
+    const s=rot+i*slice,e=s+slice;
+    cx.beginPath();cx.moveTo(c,c);cx.arc(c,c,r,s,e);cx.closePath();
+    cx.fillStyle=p.color;cx.fill();
+    cx.strokeStyle='#000';cx.lineWidth=2;cx.stroke();
+    cx.save();cx.translate(c,c);cx.rotate(s+slice/2);
+    cx.textAlign='right';cx.fillStyle='#fff';cx.shadowColor='#000';cx.shadowBlur=4;
+    cx.font='bold 9px monospace';cx.fillText(p.label,r-8,4);cx.restore();
+  });
+  cx.beginPath();cx.arc(c,c,16,0,Math.PI*2);cx.fillStyle='#0a0a0f';cx.fill();
+  cx.strokeStyle='#ffaa00';cx.lineWidth=2;cx.stroke();
+}
+function canSpinToday(){return load('snakeLastSpin','')!==todayKey()||load('snakeExtraSpins',0)>0;}
+function renderSpinBuyBtn(){
+  const btn=document.getElementById('buy-spin-btn');
+  if(!btn) return;
+  if(!canSpinToday()&&coins>=1000){btn.style.display='block';}
+  else{btn.style.display='none';}
+}
+document.getElementById('buy-spin-btn').addEventListener('click',()=>{
+  if(coins<1000) return;
+  coins-=1000; updateCoinDisplay(); saveAll();
+  save('snakeExtraSpins',(load('snakeExtraSpins',0)||0)+1);
+  renderSpinBuyBtn();
+  renderSpinScreen();
+  showToast('🎰 EXTRA SPIN!','#ffaa00');
+});
+function renderSpinScreen(){
+  document.getElementById('spin-coins').textContent=coins;
+  document.getElementById('spin-result').textContent='';
+  const btn=document.getElementById('spin-btn');
+  if(canSpinToday()){
+    btn.disabled=false;btn.style.opacity='1';
+    document.getElementById('spin-timer-txt').textContent='HEUTE NOCH VERFÜGBAR!';
+  } else {
+    btn.disabled=true;btn.style.opacity='.4';
+    document.getElementById('spin-timer-txt').textContent='MORGEN WIEDER VERFÜGBAR';
+  }
+  drawWheel(spinRotation);
+  renderSpinBuyBtn();
+}
+document.getElementById('spin-btn-nav').addEventListener('click',()=>{
+  openScreen('spin-screen');
+  document.getElementById('spin-btn-nav').classList.add('active');
+  renderSpinScreen();
+});
+document.getElementById('spin-close').addEventListener('click',()=>{
+  document.getElementById('spin-screen').classList.add('hidden');
+  document.getElementById('spin-btn-nav').classList.remove('active');
+});
+document.getElementById('spin-btn').addEventListener('click',()=>{
+  if(!canSpinToday()||isSpinning) return;
+  isSpinning=true;
+  if(load('snakeExtraSpins',0)>0){save('snakeExtraSpins',Math.max(0,(load('snakeExtraSpins',0)||0)-1));}
+  else{save('snakeLastSpin',todayKey());}
+  const prizeIdx=Math.floor(Math.random()*SPIN_PRIZES.length);
+  const slice=Math.PI*2/SPIN_PRIZES.length;
+  const targetAngle=Math.PI*2*5+(Math.PI*1.5-prizeIdx*slice-slice/2);
+  const startRot=spinRotation,startTime=Date.now(),dur=3500;
+  function anim(){
+    const t=Math.min((Date.now()-startTime)/dur,1);
+    spinRotation=startRot+targetAngle*(1-Math.pow(1-t,4));
+    drawWheel(spinRotation);
+    if(t<1){requestAnimationFrame(anim);}
+    else{
+      isSpinning=false;
+      const prize=SPIN_PRIZES[prizeIdx];
+      if(prize.fruit){
+        const luckyFruit=FRUIT_SKINS.find(f=>f.id==='lucky');
+        if(luckyFruit&&!owned.includes('fruit-lucky')){
+          owned.push('fruit-lucky'); saveAll();
+          document.getElementById('spin-result').textContent='🍀 LUCKY FRUCHT!';
+          showToast('🍀 LUCKY FRUCHT GEWONNEN! +10🪙/FRUCHT','#00ff44');
+        } else {
+          coins+=500; updateCoinDisplay(); saveAll();
+          document.getElementById('spin-result').textContent='🍀 +500🪙';
+          showToast('🍀 +500🪙!','#00ff44');
+        }
+        document.getElementById('spin-coins').textContent=coins;
+        renderSpinScreen(); isSpinning=false; return;
+      }
+      if(prize.skin){
+        const spinSkin=SKINS.find(s=>s.id==='spin');
+        if(spinSkin&&!owned.includes('spin')){
+          owned.push('spin'); saveAll();
+          document.getElementById('spin-result').textContent='🎰 GLÜCKSRAD SKIN!';
+          showToast('✨ EXKLUSIVER SKIN GEWONNEN!','#ffffff');
+        } else {
+          coins+=1000; updateCoinDisplay(); saveAll();
+          document.getElementById('spin-result').textContent='🎉 +1000🪙';
+          showToast('🎰 +1000🪙 (SKIN BEREITS OWNED)','#ffdd00');
+        }
+      } else {
+        coins+=prize.coins;updateCoinDisplay();saveAll();
+        document.getElementById('spin-result').textContent='🎉 '+prize.label+' GEWONNEN!';
+        showToast('🎰 '+prize.label+' GEWONNEN!','#ffdd00');
+      }
+      document.getElementById('spin-coins').textContent=coins;
+      renderSpinScreen();
+    }
+  }
+  requestAnimationFrame(anim);
+});
+
+
+/* ══════════════════════════════
+   REBIRTH
+══════════════════════════════ */
+function showRebirthBtn(){
+  // Show rebirth option after death if score is high enough
+  if(score>=1000){
+    const cost=Math.floor(score*0.1);
+    if(coins>=cost){
+      showToast('💫 REBIRTH für '+cost+'🪙? (NEUSTART drücken)','#cc44ff');
+      window._rebirthCost=cost;
+      window._rebirthAvail=true;
+      setTimeout(()=>{window._rebirthAvail=false;},5000);
+    }
+  }
+}
+
+/* ══════════════════════════════
+   POWER-UPS
+══════════════════════════════ */
+const POWERUPS=[
+  {id:'slow',   name:'ZEITLUPE',   icon:'⚡', desc:'5 Sek langsamer',    price:200, uses:3, color:'#00ccff'},
+  {id:'coin',   name:'COIN BOOST', icon:'💰', desc:'2x Coins 10 Sek',    price:150, uses:3, color:'#ffdd00'},
+  {id:'fruit',  name:'FRÜCHTE',    icon:'🍎', desc:'Spawnt 5 Früchte',   price:500, uses:5, color:'#ff4488'},
+  {id:'shrink', name:'SHRINK',     icon:'✂️', desc:'Länge auf 4 reset',  price:1000, uses:1, color:'#ff8800'},
+  {id:'dscore',  name:'DOPPEL SCORE',icon:'🔥', desc:'2x Score für 15 Sek',price:800,  uses:3, color:'#ff4400'},
+];
+let puOwned=load('snakePuOwned',{slow:0,shield:0,coin:0});
+let puActive={slow:false,coin:false,fruit:false,shrink:false};
+let puTimers={};
+function savePu(){save('snakePuOwned',puOwned);}
+
+function updatePuBtns(){
+  POWERUPS.forEach(p=>{
+    const btn=document.getElementById('pu-'+p.id+'-btn');
+    const cnt=document.getElementById('pu-'+p.id+'-count');
+    if(!btn||!cnt) return;
+    cnt.textContent=(puOwned[p.id]||0)+'x';
+    btn.disabled=(puOwned[p.id]||0)<=0||state!=='running';
+    btn.className='pu-btn'+(puActive[p.id]?' active-pu':'');
+  });
+}
+
+function usePowerup(id){
+  if(state!=='running') return;
+  if(!puOwned[id]||puOwned[id]<=0) return;
+  if(puActive[id]) return;
+  puOwned[id]--; savePu(); puActive[id]=true; updatePuBtns();
+  clearTimeout(puTimers[id]);
+  const dur=id==='coin'?10000:5000;
+  if(id==='slow'){clearInterval(gameLoop);gameLoop=setInterval(tick,speed*2);showToast('⚡ ZEITLUPE!','#00ccff');}
+  else if(id==='shield'){showToast('🛡️ SCHUTZ!','#ff44cc');}
+  else if(id==='coin'){showToast('💰 COIN BOOST!','#ffdd00');}
+  else if(id==='fruit'){
+    for(let i=0;i<5;i++) placeFood();
+    showToast('🍎 +5 FRÜCHTE!','#ff4488');
+    puActive[id]=false; updatePuBtns(); return;
+  }
+  else if(id==='shrink'){
+    if(snake.length>4) snake.splice(4);
+    document.getElementById('length').textContent=snake.length;
+    showToast('✂️ LÄNGE RESET!','#ff8800');
+    puActive[id]=false; updatePuBtns(); return;
+  }
+  else if(id==='dscore'){showToast('🔥 2x SCORE!','#ff4400');}
+  // Animate timer bar
+  const bar=document.getElementById('pu-'+id+'-bar');
+  if(bar){bar.style.display='block';bar.style.width='100%';bar.style.transition='none';
+    requestAnimationFrame(()=>{bar.style.transition='width '+dur+'ms linear';bar.style.width='0%';});}
+  puTimers[id]=setTimeout(()=>{
+    puActive[id]=false;
+    if(id==='slow'){clearInterval(gameLoop);gameLoop=setInterval(tick,speed);}
+    const _bar=document.getElementById('pu-'+id+'-bar');if(_bar)_bar.style.display='none';
+    updatePuBtns();
+    showToast(id==='slow'?'⚡ ZEITLUPE ENDE':id==='shield'?'🛡️ SCHUTZ ENDE':'💰 BOOST ENDE','rgba(255,255,255,.5)');
+  },dur);
+}
+
+function renderPowerupGrid(){
+  const grid=document.getElementById('powerup-grid');
+  if(!grid) return;
+  grid.innerHTML='';
+  POWERUPS.forEach(p=>{
+    const owned=puOwned[p.id]||0;
+    const card=document.createElement('div');
+    card.className='skin-card';
+    card.style.borderColor=p.color; card.style.color=p.color;
+    card.innerHTML=`<div style="font-size:24px">${p.icon}</div><div class="skin-name">${p.name}</div><div style="font-size:clamp(4px,.8vw,6px);color:rgba(255,255,255,.5);margin:2px 0;">${p.desc}</div><div class="skin-price">${p.price}🪙 = +${p.uses}x</div><div style="font-size:clamp(5px,1vw,7px);color:${p.color};">VORRAT: ${owned}x</div><button class="buy-btn" ${coins<p.price?'disabled':''}>KAUFEN</button>`;
+    const btn=card.querySelector('button');
+    if(btn&&!btn.disabled){
+      btn.addEventListener('click',e=>{
+        e.stopPropagation();
+        if(coins<p.price) return;
+        coins-=p.price; puOwned[p.id]=(puOwned[p.id]||0)+p.uses;
+        updateCoinDisplay(); savePu(); saveAll();
+        renderPowerupGrid(); updatePuBtns();
+      });
+    }
+    grid.appendChild(card);
+  });
+}
+
+/* ══════════════════════════════
+   ANIMATED BACKGROUND
+══════════════════════════════ */
+(function(){
+  const bgc=document.getElementById('bg-canvas');
+  const bx=bgc.getContext('2d');
+  const dots=[];
+  function resize(){bgc.width=window.innerWidth;bgc.height=window.innerHeight;}
+  resize();
+  window.addEventListener('resize',resize);
+  // spawn floating pixel dots
+  for(let i=0;i<38;i++) dots.push({
+    x:Math.random()*bgc.width, y:Math.random()*bgc.height,
+    size:Math.random()*3+1, speed:Math.random()*.4+.1,
+    alpha:Math.random()*.5+.1, pulse:Math.random()*Math.PI*2
+  });
+  function bgLoop(){
+    const theme=BG_THEMES.find(b=>b.id===equippedBg)||BG_THEMES[0];
+    bgc.fillStyle=theme.bg;bgc.fillRect(0,0,bgc.width,bgc.height);
+    const col=theme.dots;
+    const t=Date.now()/1000;
+    dots.forEach(d=>{
+      d.y-=d.speed; d.pulse+=.02;
+      if(d.y<-10){d.y=bgc.height+10;d.x=Math.random()*bgc.width;}
+      const a=d.alpha*(.6+.4*Math.sin(d.pulse));
+      bx.save();bx.globalAlpha=a;bx.fillStyle=col;
+      bx.fillRect(Math.round(d.x),Math.round(d.y),d.size,d.size);
+      bx.restore();
+    });
+    requestAnimationFrame(bgLoop);
+  }
+  bgLoop();
+})();
+</script>
+</body>
+</html>
