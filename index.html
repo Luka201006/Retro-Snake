@@ -31,7 +31,7 @@ body.portrait .mode-badge{font-size:clamp(5px,1.2vw,7px);display:none;}
 
 /* LANDSCAPE: side by side */
 body.landscape{flex-direction:row;gap:1px;padding:2px 2px;align-items:flex-start;}
-body.landscape .left-panel{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:88px;min-width:88px;max-width:88px;align-self:flex-start;overflow-y:auto;max-height:100vh;}
+body.landscape .left-panel{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:88px;min-width:88px;max-width:88px;align-self:flex-start;padding-top:0;}
 body.landscape #menu-panel .coin-display{margin-top:clamp(18px,3.5vh,28px);}
 body.landscape .menu-nav-grid{grid-template-columns:1fr;}
 body.landscape .nav-btn-big{flex-direction:row;gap:3px;padding:3px 4px;font-size:10px;justify-content:flex-start;width:100%;}
@@ -473,12 +473,10 @@ canvas{display:block;background:var(--bg);}
     <button class="lr-tab" data-tab="fruits">🍎 FRÜCHTE</button>
     <button class="lr-tab" data-tab="bg">🌌 HINTERGR.</button>
     <button class="lr-tab" data-tab="powerups">⚡ POWER-UPS</button>
-    <button class="lr-tab" data-tab="bundles">📦 BUNDLES</button>
     <button class="lr-tab" data-tab="codes">🔑 CODES</button>
   </div>
   <div class="lr-section" id="tab-skins"><div class="skin-grid" id="skin-grid"></div></div>
   <div class="lr-section" id="tab-fruits"><div class="fruit-grid" id="fruit-grid"></div></div>
-  <div class="lr-section" id="tab-bundles"><div class="skin-grid" id="bundle-grid"></div></div>
   <div class="lr-section" id="tab-powerups"><div class="skin-grid" id="powerup-grid"></div></div>
   <div class="lr-section" id="tab-bg"><div class="skin-grid" id="bg-grid"></div></div>
   <div class="lr-section" id="tab-codes">
@@ -510,7 +508,6 @@ canvas{display:block;background:var(--bg);}
     <div class="challenge-header"><div class="challenge-reset" id="daily-reset">🔄 RESET IN: --:--:--</div></div>
     <div id="daily-list"></div>
   </div>
-  <div class="lr-section" id="tab-weekly"><div id="weekly-challenges-list"></div></div>
   <div class="lr-section" id="tab-monthly">
     <div class="challenge-header"><div class="challenge-reset" id="monthly-reset">🔄 RESET IN: -- TAGE</div></div>
     <div id="monthly-list"></div>
@@ -771,38 +768,6 @@ function saveAll(){
 let prestigeLevel = load('snakePrestige', 0);
 const PRESTIGE_BADGES = ['✦','★','◆','▲','♛','⚡','🔥','👑'];
 function prestigeBadge(n){ return PRESTIGE_BADGES[Math.min(n-1, PRESTIGE_BADGES.length-1)] || '✦'; }
-
-const RANKS=[
-  {name:'ROOKIE',     icon:'🥉', min:0,      color:'#cd7f32'},
-  {name:'BRONZE',     icon:'🥉', min:500,    color:'#cd7f32'},
-  {name:'SILBER',     icon:'🥈', min:2000,   color:'#aaaaaa'},
-  {name:'GOLD',       icon:'🥇', min:5000,   color:'#ffdd00'},
-  {name:'PLATIN',     icon:'💎', min:10000,  color:'#88eeff'},
-  {name:'DIAMANT',    icon:'💠', min:25000,  color:'#44aaff'},
-  {name:'MEISTER',    icon:'👑', min:50000,  color:'#ff8800'},
-  {name:'GRANDMASTER',icon:'🌟', min:100000, color:'#ffffff'},
-  {name:'LEGENDE',    icon:'🔥', min:250000, color:'#ff4400'},
-];
-function getRank(totalScore){
-  let rank=RANKS[0];
-  for(const r of RANKS){ if(totalScore>=r.min) rank=r; else break; }
-  return rank;
-}
-function getNextRank(totalScore){
-  for(const r of RANKS){ if(r.min>totalScore) return r; }
-  return null;
-}
-function updateRankDisplay(){
-  const total=stats.maxScore||0;
-  const rank=getRank(total);
-  const next=getNextRank(total);
-  const el=document.getElementById('rank-display');
-  if(el){el.textContent=rank.icon+' '+rank.name;el.style.color=rank.color;el.style.textShadow='0 0 8px '+rank.color;}
-  const progEl=document.getElementById('rank-progress');
-  if(progEl&&next){const pct=Math.min(100,Math.round((total-rank.min)/(next.min-rank.min)*100));progEl.style.width=pct+'%';progEl.style.background=rank.color;}
-  const nextEl=document.getElementById('rank-next');
-  if(nextEl) nextEl.textContent=next?'NÄCHSTER: '+next.icon+' '+next.name+' ('+next.min+' PTS)':'MAX RANG!';
-}
 
 function updateCoinDisplay(){
   document.getElementById('coin-display').textContent = coins;
@@ -1613,53 +1578,6 @@ function renderInventory(){
   );
 }
 
-
-/* ══════════════════════════════
-   BUNDLES
-══════════════════════════════ */
-const BUNDLES=[
-  {id:'starter', name:'STARTER PACK',   icon:'🎮', desc:'Classic Skin + Apfel + 500🪙',  price:800,  items:{skin:'classic',fruit:'apple',coins:500}},
-  {id:'nature',  name:'NATUR BUNDLE',   icon:'🌿', desc:'Natur Skin + Kiwi + 1000🪙',    price:8000, items:{skin:'nature', fruit:'kiwi', coins:1000}},
-  {id:'fire',    name:'FEUER BUNDLE',   icon:'🔥', desc:'Feuer Skin + Erdbeere + 500🪙', price:6000, items:{skin:'fire',   fruit:'strawberry', coins:500}},
-  {id:'ocean',   name:'OZEAN BUNDLE',   icon:'🌊', desc:'Ozean Skin + Melone + 500🪙',   price:6000, items:{skin:'ocean',  fruit:'watermelon', coins:500}},
-  {id:'legend',  name:'LEGEND BUNDLE',  icon:'👑', desc:'Galaxie Skin + Mango + 2000🪙', price:15000,items:{skin:'galaxy', fruit:'mango', coins:2000}},
-];
-function renderBundleGrid(){
-  const grid=document.getElementById('bundle-grid');
-  if(!grid) return;
-  grid.innerHTML='';
-  BUNDLES.forEach(b=>{
-    const alreadyOwned=owned.includes(b.items.skin)&&owned.includes('fruit-'+b.items.fruit);
-    const card=document.createElement('div');
-    card.className='skin-card';
-    card.style.borderColor='#ffaa00';
-    card.innerHTML='<div style="font-size:24px">'+b.icon+'</div>'
-      +'<div class="skin-name" style="color:#ffaa00;">'+b.name+'</div>'
-      +'<div style="font-size:clamp(4px,.8vw,6px);color:rgba(255,255,255,.5);margin:3px 0;">'+b.desc+'</div>'
-      +'<div class="skin-price">'+b.price+'🪙</div>'
-      +(alreadyOwned
-        ?'<div style="font-size:clamp(4px,.8vw,5px);color:#888;">BEREITS BESESSEN</div>'
-        :'<button class="buy-btn" '+(coins<b.price?'disabled':'')+'>KAUFEN</button>');
-    if(!alreadyOwned){
-      const btn=card.querySelector('button');
-      if(btn&&!btn.disabled){
-        btn.addEventListener('click',e=>{
-          e.stopPropagation();
-          if(coins<b.price) return;
-          coins-=b.price;
-          if(!owned.includes(b.items.skin)) owned.push(b.items.skin);
-          if(!owned.includes('fruit-'+b.items.fruit)) owned.push('fruit-'+b.items.fruit);
-          coins+=b.items.coins;
-          updateCoinDisplay(); saveAll();
-          renderBundleGrid(); renderInventory();
-          showToast('📦 '+b.name+' GEKAUFT!','#ffaa00');
-        });
-      }
-    }
-    grid.appendChild(card);
-  });
-}
-
 function renderBgGrid(){
   const grid=document.getElementById('bg-grid');
   if(!grid) return;
@@ -1714,7 +1632,7 @@ document.getElementById('inv-close').addEventListener('click',()=>{
 document.getElementById('locker-btn').addEventListener('click',()=>{
   openScreen('locker-room');
   document.getElementById('locker-btn').classList.add('active');
-  renderSkinGrid();renderFruitGrid();renderBgGrid();renderPowerupGrid();renderBundleGrid();
+  renderSkinGrid();renderFruitGrid();renderBgGrid();renderPowerupGrid();
   document.getElementById('lr-coins').textContent=coins;
 });
 document.getElementById('challenges-btn').addEventListener('click',()=>{
@@ -1755,7 +1673,6 @@ document.querySelectorAll('.lr-tab').forEach(tab=>{
     tab.classList.add('active');
     document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
     if(tab.dataset.tab==='inventory') renderInventory();
-    if(tab.dataset.tab==='bundles') renderBundleGrid();
   });
 });
 
@@ -1795,8 +1712,7 @@ function showStart(){
   const col=MODES[currentMode].color;
   oTitle.style.color=col;oTitle.style.textShadow=`0 0 10px ${col},0 0 28px ${col}`;
   const pb=prestigeLevel>0?' '+prestigeBadge(prestigeLevel):'';
-  const rank=getRank(stats.maxScore||0);
-  oSub.textContent=playerName?rank.icon+' '+playerName+pb:'';oSub.classList.remove('hidden');
+  oSub.textContent=playerName?'👾 '+playerName+pb:'';oSub.classList.remove('hidden');
   oScore.classList.add('hidden');oHint.textContent='';
   modeGrid.classList.remove('hidden');
   document.getElementById('menu-btn').style.display='none';
@@ -2006,67 +1922,6 @@ function renderAchievements(){
 }
 
 /* ══════════════════════════════
-   WEEKLY CHALLENGES
-══════════════════════════════ */
-function weekKey(){
-  const d=new Date();
-  const jan1=new Date(d.getFullYear(),0,1);
-  const week=Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
-  return d.getFullYear()+'-W'+week;
-}
-const WEEKLY_POOL=[
-  {id:'w_fruits_100', title:'OBSTBAUER',     desc:'Sammle 100 Früchte diese Woche',  type:'fruits', target:100,  reward:500},
-  {id:'w_score_5000', title:'HIGHSCORER',    desc:'Erreiche 5000 Punkte',            type:'score',  target:5000, reward:400},
-  {id:'w_games_20',   title:'DAUERZOCKER',   desc:'Spiele 20 Runden',                type:'games',  target:20,   reward:300},
-  {id:'w_level_8',    title:'AUFSTEIGER',    desc:'Erreiche Level 8',                type:'level',  target:8,    reward:350},
-  {id:'w_length_25',  title:'RIESENSCHLANGE',desc:'Erreiche Länge 25',               type:'length', target:25,   reward:450},
-  {id:'w_fruits_200', title:'OBSTKÖNIG',     desc:'Sammle 200 Früchte',              type:'fruits', target:200,  reward:700},
-  {id:'w_score_10000',title:'LEGENDE',       desc:'Erreiche 10000 Punkte',           type:'score',  target:10000,reward:800},
-];
-function getWeeklyChallenges(){
-  const key=weekKey()+'v1';
-  if(load('snakeWeeklyKey','')===key) return load('snakeWeeklyChallenges',[]);
-  const picked=[];
-  const pool=[...WEEKLY_POOL];
-  while(picked.length<3&&pool.length){
-    const i=Math.floor(Math.random()*pool.length);
-    picked.push({...pool.splice(i,1)[0],progress:0,claimed:false});
-  }
-  save('snakeWeeklyKey',key);save('snakeWeeklyChallenges',picked);return picked;
-}
-function saveWeeklyChallenges(c){save('snakeWeeklyChallenges',c);}
-function renderWeeklyChallenges(){
-  const list=document.getElementById('weekly-challenges-list');
-  if(!list) return;
-  const challenges=getWeeklyChallenges();
-  list.innerHTML='';
-  challenges.forEach(c=>{
-    const pct=Math.min(100,Math.round((c.progress||0)/c.target*100));
-    const done=c.progress>=c.target;
-    const div=document.createElement('div');
-    div.className='challenge-item'+(done?' done':'');
-    div.innerHTML='<div class="ch-title">'+c.title+(done?' ✓':'')+'</div>'
-      +'<div class="ch-desc">'+c.desc+'</div>'
-      +'<div class="ch-progress-bar"><div class="ch-progress-fill" style="width:'+pct+'%"></div></div>'
-      +'<div class="ch-meta">'+(c.progress||0)+'/'+c.target
-      +(done&&!c.claimed?'<button class="ch-claim-btn" data-id="'+c.id+'">+'+c.reward+'🪙 ABHOLEN</button>':'')
-      +(c.claimed?'<span style="color:#888">ABGEHOLT</span>':'')+'</div>';
-    list.appendChild(div);
-  });
-  list.querySelectorAll('.ch-claim-btn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      const challenges=getWeeklyChallenges();
-      const c=challenges.find(x=>x.id===btn.dataset.id);
-      if(c&&!c.claimed&&c.progress>=c.target){
-        c.claimed=true;coins+=c.reward;updateCoinDisplay();saveAll();
-        saveWeeklyChallenges(challenges);renderWeeklyChallenges();
-        showToast('🏆 '+c.title+' +'+c.reward+'🪙','#ffaa00');
-      }
-    });
-  });
-}
-
-/* ══════════════════════════════
    DAILY CHALLENGES
 ══════════════════════════════ */
 const CHALLENGE_POOL=[
@@ -2176,21 +2031,6 @@ function updateChallengeProgress(gameData){
     });
     if(sChanged) saveSeasonalChallenges(seasonal);
   }
-  // Weekly
-  const weekly=getWeeklyChallenges(); let wChanged=false;
-  weekly.forEach(c=>{
-    if(c.claimed) return; const prev=c.progress||0;
-    switch(c.type){
-      case 'fruits': c.progress=Math.min(c.target,(c.progress||0)+gameData.fruits);break;
-      case 'score':  c.progress=Math.max(c.progress||0,gameData.score);break;
-      case 'games':  c.progress=Math.min(c.target,(c.progress||0)+1);break;
-      case 'level':  c.progress=Math.max(c.progress||0,gameData.level);break;
-      case 'length': c.progress=Math.max(c.progress||0,gameData.length);break;
-    }
-    if(c.progress!==prev) wChanged=true;
-    if(c.progress>=c.target&&!c.claimed) showToast('📆 '+c.title+' FERTIG!','#ffaa00');
-  });
-  if(wChanged) saveWeeklyChallenges(weekly);
 }
 
 function buildChallengeList(challenges,listId,saveFunc,type){
@@ -2256,7 +2096,6 @@ document.querySelectorAll('#challenges-screen .lr-tab').forEach(tab=>{
     tab.classList.add('active');
     document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
     if(tab.dataset.tab==='daily')renderDailyChallenges();
-    else if(tab.dataset.tab==='weekly')renderWeeklyChallenges();
     else if(tab.dataset.tab==='monthly')renderMonthlyChallenges();
     else renderSeasonalChallenges();
   });
@@ -2426,7 +2265,6 @@ document.querySelectorAll('#leaderboard-screen .lr-tab').forEach(tab=>{
    STATS SCREEN
 ══════════════════════════════ */
 function renderStats(){
-  updateRankDisplay();
   document.getElementById('st-coins').textContent=coins;
   document.getElementById('st-games').textContent=stats.totalGames||0;
   document.getElementById('st-score').textContent=stats.maxScore||0;
@@ -2648,54 +2486,27 @@ function stopMusic(){
 /* ══════════════════════════════
    LOGIN POPUP
 ══════════════════════════════ */
-function getDailyFreeItem(){
-  // Pick a daily free item based on date
-  const d=new Date(); const seed=d.getDate()+d.getMonth()*31;
-  const items=[
-    {type:'coins',amount:50,  label:'+50🪙 BONUS',    color:'#ffdd00'},
-    {type:'coins',amount:100, label:'+100🪙 BONUS',   color:'#ffdd00'},
-    {type:'pu',   id:'slow',  label:'⚡ ZEITLUPE x1', color:'#00ccff'},
-    {type:'pu',   id:'coin',  label:'💰 COIN BOOST x1',color:'#ffdd00'},
-    {type:'pu',   id:'fruit', label:'🍎 FRÜCHTE x1',  color:'#ff4488'},
-    {type:'coins',amount:200, label:'+200🪙 BONUS',   color:'#ff8800'},
-    {type:'pu',   id:'dscore',label:'🔥 2x SCORE x1', color:'#ff4400'},
-  ];
-  return items[seed % items.length];
-}
-
 function showLoginPopup(){
   if(load('snakeLastLogin','')===todayKey()) return;
   const streak=load('snakeStreak',0);
-  const reward=Math.max(100,streak*100);
-  const nextReward=Math.max(100,(streak+1)*100);
-  const freeItem=getDailyFreeItem();
+  const reward=Math.max(10,streak*10);
+  const nextReward=Math.max(10,(streak+1)*10);
   document.getElementById('login-streak-txt').textContent='TAG '+(streak||1)+' — STREAK: '+(streak||1)+'🔥';
   document.getElementById('login-coins-txt').textContent='+'+reward+'🪙';
   const fireTxt=document.getElementById('login-fire-txt');
-  fireTxt.innerHTML=(streak>=3?'🔥 '+streak+' TAGE! ':'')+'MORGEN: +'+nextReward+'🪙';
-  // Show free item
-  let freeEl=document.getElementById('login-free-item');
-  if(!freeEl){
-    freeEl=document.createElement('div');
-    freeEl.id='login-free-item';
-    freeEl.style.cssText='font-size:clamp(6px,1.2vw,8px);letter-spacing:.1em;margin-top:4px;';
-    document.getElementById('login-fire-txt').after(freeEl);
+  if(streak>=3){
+    fireTxt.innerHTML='🔥 '+streak+' TAGE! MORGEN: +'+nextReward+'🪙';
+  } else {
+    fireTxt.innerHTML='MORGEN: +'+nextReward+'🪙';
   }
-  freeEl.style.color=freeItem.color;
-  freeEl.textContent='🎁 GRATIS: '+freeItem.label;
   document.getElementById('login-popup').classList.remove('hidden');
 }
 function claimLoginReward(){
   if(load('snakeLastLogin','')===todayKey()) return;
   save('snakeLastLogin',todayKey());
   const streak=load('snakeStreak',0);
-  const reward=Math.max(100,streak*100);
-  coins+=reward;
-  // Give free item
-  const freeItem=getDailyFreeItem();
-  if(freeItem.type==='coins'){coins+=freeItem.amount;}
-  else if(freeItem.type==='pu'){puOwned[freeItem.id]=(puOwned[freeItem.id]||0)+1;savePu();}
-  updateCoinDisplay(); saveAll();
+  const reward=Math.max(10,streak*10);
+  coins+=reward; updateCoinDisplay(); saveAll();
 }
 document.getElementById('login-claim-btn').addEventListener('click',()=>{
   claimLoginReward();
@@ -2827,7 +2638,6 @@ document.getElementById('spin-btn').addEventListener('click',()=>{
 });
 
 
-
 /* ══════════════════════════════
    REBIRTH
 ══════════════════════════════ */
@@ -2855,7 +2665,7 @@ const POWERUPS=[
   {id:'dscore',  name:'DOPPEL SCORE',icon:'🔥', desc:'2x Score für 15 Sek',price:800,  uses:3, color:'#ff4400'},
 ];
 let puOwned=load('snakePuOwned',{slow:0,shield:0,coin:0});
-let puActive={slow:false,coin:false,fruit:false,shrink:false,dscore:false};
+let puActive={slow:false,coin:false,fruit:false,shrink:false};
 let puTimers={};
 function savePu(){save('snakePuOwned',puOwned);}
 
