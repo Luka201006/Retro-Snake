@@ -690,10 +690,26 @@ canvas{display:block;background:var(--bg);}
 
 <script>
 window.onerror = function(msg, src, line, col, err) {
-  document.body.insertAdjacentHTML('beforeend',
-    '<div style="position:fixed;top:0;left:0;right:0;background:red;color:white;padding:10px;z-index:9999;font-size:12px;font-family:monospace;">'
-    + 'FEHLER Zeile ' + line + ': ' + msg + '</div>');
+  const d = document.getElementById('_err_bar') || document.createElement('div');
+  d.id = '_err_bar';
+  d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:6px;z-index:9999;font-size:11px;font-family:monospace;';
+  d.textContent = 'FEHLER Zeile ' + line + ': ' + msg;
+  document.body.appendChild(d);
   return false;
+};
+// Catch errors in event handlers too
+const _origAdd = EventTarget.prototype.addEventListener;
+EventTarget.prototype.addEventListener = function(type, fn, opts) {
+  _origAdd.call(this, type, function(...args) {
+    try { fn.apply(this, args); }
+    catch(e) {
+      const d = document.getElementById('_err_bar') || document.createElement('div');
+      d.id = '_err_bar';
+      d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:6px;z-index:9999;font-size:11px;font-family:monospace;';
+      d.textContent = 'CLICK FEHLER: ' + e.message + ' ('+e.stack.split('\n')[1]+')';
+      document.body.appendChild(d);
+    }
+  }, opts);
 };
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
 
@@ -774,6 +790,10 @@ let equippedSkin   = load('snakeEquippedSkin',  'classic');
 let equippedFx     = load('snakeEquippedFx',    'default');
 let equippedFruit  = load('snakeEquippedFruit', 'apple');
 let equippedBg     = load('snakeEquippedBg',    'default');
+
+let stats     = load('snakeStats2',  {totalFruits:0,maxLevel:0,maxScore:0,maxLength:0,totalGames:0,modesPlayed:0,noReviveL10:0});
+let modesSet  = load('snakeModesSet', []);
+let achieved  = load('snakeAchieved', []);
 
 function saveAll(){
   save('snakeCoins', coins);
@@ -1957,9 +1977,6 @@ const ACHIEVEMENTS=[
   {id:'length_30',    icon:'🐍', name:'SCHLANGE',       desc:'Länge 30 erreicht',               req:{stat:'maxLength',    val:30},   reward:100, tier:'silver'},
 ];
 
-let stats     = load('snakeStats2',  {totalFruits:0,maxLevel:0,maxScore:0,maxLength:0,totalGames:0,modesPlayed:0,noReviveL10:0});
-let modesSet  = load('snakeModesSet', []);
-let achieved  = load('snakeAchieved', []);
 
 function checkAchievements(){
   ACHIEVEMENTS.forEach(a=>{
