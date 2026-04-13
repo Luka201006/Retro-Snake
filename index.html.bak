@@ -503,7 +503,6 @@ canvas{display:block;background:var(--bg);}
   </div>
   <div class="lr-tabs">
     <button class="lr-tab active" data-tab="daily">☀️ DAILY</button>
-    <button class="lr-tab" data-tab="weekly">📅 WEEKLY</button>
     <button class="lr-tab" data-tab="monthly">📆 MONTHLY</button>
     <button class="lr-tab" data-tab="seasonal">🌸 SAISON</button>
   </div>
@@ -586,15 +585,6 @@ canvas{display:block;background:var(--bg);}
     <button class="lr-close" id="st-close">✕</button>
   </div>
   <div style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:8px;padding:8px;">
-    <div class="stats-section-title">🥇 RANG</div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 8px;background:rgba(255,255,255,.04);border-radius:6px;border:1px solid rgba(255,255,255,.08);">
-      <div id="rank-display" style="font-size:clamp(12px,2.5vw,18px);letter-spacing:.1em;font-family:'Press Start 2P',monospace;">🥉 ROOKIE</div>
-      <div style="width:100%;background:rgba(255,255,255,.1);border-radius:4px;height:8px;overflow:hidden;">
-        <div id="rank-progress" style="height:100%;width:0%;border-radius:4px;transition:width .5s;"></div>
-      </div>
-      <div id="rank-next" style="font-size:clamp(5px,1vw,7px);color:rgba(255,255,255,.45);letter-spacing:.08em;">NÄCHSTER: --</div>
-    </div>
-    <div class="sep"></div>
     <div class="stats-section-title">🔥 STREAK</div>
     <div class="stat-row"><span class="stat-label">AKTUELLER STREAK</span><span class="stat-val" id="st-streak" style="color:#ff6600;text-shadow:0 0 6px #ff6600;">0</span></div>
     <div class="stat-row"><span class="stat-label">BESTER STREAK</span><span class="stat-val" id="st-best-streak" style="color:#ff6600;text-shadow:0 0 6px #ff6600;">0</span></div>
@@ -1764,16 +1754,13 @@ document.getElementById('cheat-submit').addEventListener('click',submitCheat);
 document.getElementById('cheat-input').addEventListener('keydown',e=>{if(e.key==='Enter')submitCheat();});
 document.getElementById('ch-close').addEventListener('click',()=>{document.getElementById('challenges-screen').classList.add('hidden');document.getElementById('challenges-btn').classList.remove('active');});
 document.getElementById('ac-close').addEventListener('click',()=>{document.getElementById('achievements-screen').classList.add('hidden');document.getElementById('achievements-btn').classList.remove('active');});
-document.querySelectorAll('#locker-room .lr-tab').forEach(tab=>{
+document.querySelectorAll('.lr-tab').forEach(tab=>{
   tab.addEventListener('click',()=>{
-    document.querySelectorAll('#locker-room .lr-tab').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('#locker-room .lr-section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.lr-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.lr-section').forEach(s=>s.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
-    if(tab.dataset.tab==='skins') renderSkinGrid();
-    if(tab.dataset.tab==='fruits') renderFruitGrid();
-    if(tab.dataset.tab==='bg') renderBgGrid();
-    if(tab.dataset.tab==='powerups') renderPowerupGrid();
+    if(tab.dataset.tab==='inventory') renderInventory();
     if(tab.dataset.tab==='bundles') renderBundleGrid();
   });
 });
