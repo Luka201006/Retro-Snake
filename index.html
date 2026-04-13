@@ -2983,7 +2983,7 @@ function renderPowerupGrid(){
   });
   function bgLoop(){
     const theme=BG_THEMES.find(b=>b.id===equippedBg)||BG_THEMES[0];
-    bgc.fillStyle=theme.bg;bgc.fillRect(0,0,bgc.width,bgc.height);
+    bx.fillStyle=theme.bg;bx.fillRect(0,0,bgc.width,bgc.height);
     const col=theme.dots;
     const t=Date.now()/1000;
     dots.forEach(d=>{
