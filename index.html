@@ -258,13 +258,13 @@ canvas{display:block;background:var(--bg);}
 #hud-panel.hidden{display:none;}
 .menu-nav-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;width:100%;}
 .nav-btn-big{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 3px;
-  font-family:'Press Start 2P',monospace;font-size:14px;background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.2);color:#fff;cursor:pointer;border-radius:4px;
-  transition:all .2s;letter-spacing:.05em;}
-.nav-btn-big span{font-size:clamp(4px,.8vw,5px);color:rgba(255,255,255,.5);letter-spacing:.1em;}
+  font-family:'Press Start 2P',monospace;font-size:14px;background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.45);color:#fff;cursor:pointer;border-radius:4px;
+  transition:all .2s;letter-spacing:.05em;text-shadow:0 0 6px rgba(255,255,255,.4);}
+.nav-btn-big span{font-size:clamp(4px,.8vw,5px);color:rgba(255,255,255,.75);letter-spacing:.1em;}
 .nav-btn-big:active{opacity:.6;transform:scale(.95);}
-.nav-btn-big:hover{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.08);}
-.nav-btn-big.active{border-color:#ffaa00;box-shadow:0 0 10px #ffaa00;}
+.nav-btn-big:hover{border-color:rgba(255,255,255,.7);background:rgba(255,255,255,.2);}
+.nav-btn-big.active{border-color:#ffaa00;box-shadow:0 0 10px #ffaa00;background:rgba(255,170,0,.12);}
 .pu-btn{width:100%;padding:5px 4px;font-family:'Press Start 2P',monospace;font-size:clamp(4px,.85vw,6px);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.2);color:#fff;cursor:pointer;letter-spacing:.05em;transition:all .2s;text-align:left;}
 .pu-btn:disabled{opacity:.3;cursor:default;}
 .pu-btn.active-pu{border-color:#ffdd00;color:#ffdd00;box-shadow:0 0 8px #ffdd00;}
@@ -941,7 +941,7 @@ function fruitsToLevel(lvl){
 /* ══════════════════════════════
    GAME STATE
 ══════════════════════════════ */
-let snake,dir,nextDir,foods,walls,particles;
+let snake=[],dir={x:1,y:0},nextDir={x:1,y:0},foods=[],walls=[],particles=[];
 let score,level,speed,gameLoop,state='naming';
 let fruitsCollected,fruitsNeeded;
 let best=load('snakeBest',0);
